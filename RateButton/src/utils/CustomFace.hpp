@@ -11,7 +11,7 @@ namespace CustomFace {
     inline constexpr float CUSTOM_FACE_SCALE = 1.25f;
     inline constexpr float STOCK_FACE_DISPLAY = 62.f * 1.25f; // DevRateStarsPopup stock face
     // Extra stacked VERY/EASY line covers stock star row — push stars down.
-    inline constexpr float VERY_EASY_STARS_NUDGE_Y = -14.f;
+    inline constexpr float VERY_EASY_STARS_NUDGE_Y = -19.f;
 
     inline constexpr char const *ID_VERY_EASY = "rb-very-easy-face";
     inline constexpr char const *ID_IMPOSSIBLE = "rb-impossible-face";
@@ -139,7 +139,10 @@ namespace CustomFace {
         fire->setPosition(face->getPosition());
         if (Utils::isVeryEasyLevel(level)) {
             // The upper part of the PNG is a halo, not the round face.
-            fire->setScale(fire->getScale() * 0.78f);
+            // Let the visible fire ring sit just outside the entire Very Easy face.
+            float desiredWidth = face->getScaledContentSize().width * 1.08f;
+            if (fire->getContentSize().width > 0.f)
+                fire->setScale(desiredWidth / fire->getContentSize().width);
             fire->setPositionY(face->getPositionY()
                 - face->getScaledContentSize().height * 0.16f);
         }

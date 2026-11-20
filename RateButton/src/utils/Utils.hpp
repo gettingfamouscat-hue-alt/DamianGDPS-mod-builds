@@ -6,7 +6,7 @@ using namespace geode::prelude;
 
 namespace Utils {
     constexpr int IMPOSSIBLE_DEMON_DIFF = 7; // server starDemonDiff
-    constexpr int DEMON_SUBTYPE_COUNT = 6;   // Easy…Extreme + Impossible (picker index)
+    constexpr int DEMON_SUBTYPE_COUNT = 5;   // Easy…Extreme + Impossible (picker index)
     constexpr int IMPOSSIBLE_DEMON_INDEX = 5;
 
     /*
@@ -36,14 +36,14 @@ namespace Utils {
     constexpr std::string_view getDemonDifficultyName(int demonDiff) {
         constexpr std::string_view names[] = {
             "easy-demon", "medium-demon", "hard-demon",
-            "insane-demon", "extreme-demon", "impossible-demon"
+            "insane-demon", "extreme-demon"
         };
         if (demonDiff < 0 || demonDiff >= DEMON_SUBTYPE_COUNT) return "hard-demon";
         return names[demonDiff];
     }
 
     constexpr bool isCustomDemonFace(int demonDiff) {
-        return demonDiff == IMPOSSIBLE_DEMON_INDEX;
+        return false;
     }
 
     constexpr char const* getDemonFaceFrame(int demonDiff) {
@@ -62,20 +62,20 @@ namespace Utils {
     constexpr char const* getDemonDisplayLabel(int demonDiff) {
         constexpr char const* labels[] = {
             "Easy Demon", "Medium Demon", "Hard Demon",
-            "Insane Demon", "Extreme Demon", "Impossible Demon"
+            "Insane Demon", "Extreme Demon"
         };
         if (demonDiff < 0 || demonDiff >= DEMON_SUBTYPE_COUNT) return labels[2];
         return labels[demonDiff];
     }
 
     // Face-only picker: 0=N/A … 6=Insane … 7-12=demon subtypes (incl. Impossible)
-    constexpr int FACE_DIFF_COUNT = 13;
+    constexpr int FACE_DIFF_COUNT = 12;
 
     constexpr std::string_view getFaceOnlyDifficultyName(int index) {
         constexpr std::string_view names[] = {
             "na", "auto", "easy", "normal", "hard", "harder", "insane",
             "easy-demon", "medium-demon", "hard-demon", "insane-demon",
-            "extreme-demon", "impossible-demon"
+            "extreme-demon"
         };
         if (index < 0 || index >= FACE_DIFF_COUNT) return "na";
         return names[index];
@@ -108,9 +108,7 @@ namespace Utils {
     }
 
     inline bool isImpossibleDemonLevel(GJGameLevel *level) {
-        return level
-            && level->m_demon
-            && static_cast<int>(level->m_demonDifficulty) == IMPOSSIBLE_DEMON_DIFF;
+return false;
     }
 
     // Readable name for a rated level (cells / info face caption).
@@ -128,7 +126,7 @@ namespace Utils {
                 case 0: return "Hard Demon";
                 case 5: return "Insane Demon";
                 case 6: return "Extreme Demon";
-                case 7: return "Impossible Demon";
+                case 7: return "Extreme Demon";
                 default: return "Demon";
             }
         }

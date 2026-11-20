@@ -53,6 +53,7 @@ class $modify(MyLevelCell, LevelCell) {
             return;
 
         CustomFace::applyForLevel(host, m_level);
+        CustomFace::setStarRowNudge(this, Utils::isVeryEasyLevel(m_level));
     }
 
     void fitImpossibleColumn() {

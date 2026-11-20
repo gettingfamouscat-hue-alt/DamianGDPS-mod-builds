@@ -405,10 +405,11 @@ void DevRateStarsPopup::onSendOnly(CCObject *) {
         );
         GameLevelManager::sharedState()->uploadComment(
             fmt::format(
-                "!send {} {} {} #{}",
+                "!send {} {} {} {} #{}",
                 difficultyCommandName(),
                 stars,
                 static_cast<int>(m_featureState),
+                m_coinsEnabled ? 1 : 0,
                 nonce
             ),
             CommentType::Level, m_levelId, 0

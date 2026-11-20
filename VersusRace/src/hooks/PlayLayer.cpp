@@ -16,11 +16,13 @@ class $modify(VersusPlayLayer, PlayLayer) {
         CCLabelBMFont* names[2]{};
         CCLabelBMFont* percents[2]{};
         CCLayerColor* bars[2]{};
-        CCSprite* lives[2][3]{};
+        CCSprite* hearts[2]{};
+        CCLabelBMFont* lifeCounts[2]{};
         float pollAcc = 0.f;
         float percentAcc = 0.f;
         float deathCooldown = 0.f;
         bool endShown = false;
+        float endExitDelay = -1.f;
         bool completed = false;
         bool endScreenShown = false;
         bool resultPending = false;
@@ -42,29 +44,29 @@ class $modify(VersusPlayLayer, PlayLayer) {
 
         auto win = CCDirector::sharedDirector()->getWinSize();
         auto* hud=CCNode::create();hud->setID("versus-hud"_spr);
-        hud->setPosition({win.width/2.f,win.height-42.f});addChild(hud,1000);
+        hud->setPosition({win.width/2.f,win.height-28.f});addChild(hud,1000);
         for(int side=0;side<2;++side) {
-            float x=side==0?-115.f:115.f;
-            auto* bg=CCLayerColor::create({25,25,45,210},205.f,65.f);
-            bg->setPosition({x-102.f,-33.f});hud->addChild(bg,-1);
-            auto* icon=SimplePlayer::create(1);icon->setScale(.45f);
-            icon->setPosition({x-79.f,7.f});hud->addChild(icon);m_fields->icons[side]=icon;
+            float edge=side==0?-win.width/2.f:win.width/2.f;
+            float direction=side==0?1.f:-1.f;
+            auto* icon=SimplePlayer::create(1);icon->setScale(.52f);
+            icon->setPosition({edge+direction*27.f,-10.f});hud->addChild(icon);m_fields->icons[side]=icon;
             auto* title=CCLabelBMFont::create(side==0?"YOU":"OPPONENT","bigFont.fnt");
-            title->setScale(.32f);title->setAnchorPoint({0,0.5f});title->setPosition({x-55.f,15.f});hud->addChild(title);
-            m_fields->names[side]=title;
-            auto* pct=CCLabelBMFont::create("0%","bigFont.fnt");pct->setScale(.4f);
-            pct->setAnchorPoint({1.f,.5f});pct->setPosition({x+90.f,15.f});hud->addChild(pct);m_fields->percents[side]=pct;
-            auto* track=CCLayerColor::create({50,50,65,255},150.f,6.f);
-            track->setPosition({x-55.f,-2.f});hud->addChild(track);
-            auto* bar=CCLayerColor::create(side==0?ccc4(65,230,85,255):ccc4(255,105,70,255),1.f,6.f);
-            bar->setAnchorPoint({0,0});bar->setPosition({x-55.f,-2.f});hud->addChild(bar);m_fields->bars[side]=bar;
-            for(int i=0;i<3;++i) {
-                auto* life=CCSprite::createWithSpriteFrameName("GJ_heart01.png");
-                if(!life)life=CCSprite::createWithSpriteFrameName("GJ_likesIcon_001.png");
-                if(!life)continue;
-                life->setScale(.33f);life->setPosition({x-42.f+i*24.f,-22.f});hud->addChild(life);
-                m_fields->lives[side][i]=life;
-            }
+            title->setScale(.34f);title->setAnchorPoint({side==0?0.f:1.f,.5f});
+            title->setPosition({edge+direction*55.f,6.f});hud->addChild(title);m_fields->names[side]=title;
+            auto* pct=CCLabelBMFont::create("0%","bigFont.fnt");pct->setScale(.44f);
+            pct->setAnchorPoint({side==0?0.f:1.f,.5f});
+            pct->setPosition({edge+direction*55.f,-17.f});hud->addChild(pct);m_fields->percents[side]=pct;
+            auto* heart=CCSprite::create("versus-heart.png"_spr);
+            if(heart){heart->setScale(.15f);heart->setPosition({edge+direction*110.f,-17.f});hud->addChild(heart);}
+            m_fields->hearts[side]=heart;
+            auto* lifeCount=CCLabelBMFont::create("3","bigFont.fnt");lifeCount->setScale(.4f);
+            lifeCount->setPosition({edge+direction*130.f,-17.f});hud->addChild(lifeCount);m_fields->lifeCounts[side]=lifeCount;
+            float trackWidth=std::max(70.f,win.width/2.f-115.f);
+            float trackX=side==0?-win.width/2.f+110.f:5.f;
+            auto* track=CCLayerColor::create({20,20,25,255},trackWidth,5.f);
+            track->setPosition({trackX,23.f});hud->addChild(track);
+            auto* bar=CCLayerColor::create(side==0?ccc4(65,230,245,255):ccc4(255,105,70,255),1.f,5.f);
+            bar->setPosition({trackX,23.f});hud->addChild(bar);m_fields->bars[side]=bar;
         }
         m_fields->overlay=m_fields->names[0];
         this->refreshOverlay();
@@ -98,12 +100,10 @@ class $modify(VersusPlayLayer, PlayLayer) {
             }
             float percent=std::clamp(side==0?snap.myPercent:snap.oppPercent,0.f,100.f);
             if(auto* label=m_fields->percents[side])label->setString(fmt::format("{:.0f}%",percent).c_str());
-            if(auto* bar=m_fields->bars[side])bar->setContentSize({std::max(1.f,150.f*percent/100.f),6.f});
+            if(auto* bar=m_fields->bars[side])bar->setContentSize({std::max(1.f,(CCDirector::sharedDirector()->getWinSize().width/2.f-115.f)*percent/100.f),5.f});
             int remaining=std::clamp(side==0?snap.myLives:snap.oppLives,0,3);
-            for(int i=0;i<3;++i)if(auto* life=m_fields->lives[side][i]){
-                life->setColor(i<remaining?ccc3(255,75,95):ccc3(90,90,90));
-                life->setOpacity(i<remaining?255:120);
-            }
+            if(auto* heart=m_fields->hearts[side])heart->setVisible(remaining>0);
+            if(auto* count=m_fields->lifeCounts[side])count->setString(std::to_string(remaining).c_str());
         }
     }
 
@@ -114,10 +114,11 @@ class $modify(VersusPlayLayer, PlayLayer) {
             return;
         m_fields->pendingResult = snap;
         m_fields->resultPending = true;
-        if (CompletionFlow::deferResult(m_levelEndAnimationStarted, m_fields->completed, m_fields->endScreenShown))
+        if (m_fields->completed && !m_fields->endScreenShown)
             return;
         m_fields->endShown = true;
         m_fields->resultPending = false;
+        m_fields->endExitDelay = 3.f;
 
         char const* title = snap.youWin ? "You Win!" : "You Lose!";
         char const* body = snap.youWin
@@ -147,6 +148,12 @@ class $modify(VersusPlayLayer, PlayLayer) {
 
     void postUpdate(float dt) {
         PlayLayer::postUpdate(dt);
+        if (m_fields->endShown && m_fields->endExitDelay >= 0.f && !m_fields->exited) {
+            m_fields->endExitDelay -= dt;
+            if (m_fields->endExitDelay < 0.f) { this->onQuit(); return; }
+        }
+        if (m_fields->overlay && !m_fields->endShown && VersusManager::get().last().phase == "finished")
+            this->maybeShowEnd(VersusManager::get().last());
 
         if (!m_fields->overlay || !VersusManager::get().inMatch() || m_fields->endShown)
             return;

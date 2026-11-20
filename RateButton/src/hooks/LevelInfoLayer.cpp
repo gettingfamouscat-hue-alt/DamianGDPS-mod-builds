@@ -100,6 +100,7 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
                 );
             }
         }
+        CustomFace::setStarRowNudge(this, Utils::isVeryEasyLevel(m_level));
     }
 
     void ensureRateButton() {

@@ -20,7 +20,7 @@ namespace SearchFilters {
     inline constexpr char const *KEY_EASY = "search-filter-easy";
 
     inline bool impossibleActive() {
-        return Mod::get()->getSavedValue<bool>(KEY_IMPOSSIBLE, false);
+        return false;
     }
 
     inline void setImpossible(bool on) {

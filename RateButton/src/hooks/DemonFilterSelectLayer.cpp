@@ -59,7 +59,7 @@ class $modify(MyDemonFilterSelectLayer, DemonFilterSelectLayer) {
 
     bool init() {
         if (!DemonFilterSelectLayer::init()) return false;
-        addImpossibleButton();
+        SearchFilters::setImpossible(false);
         return true;
     }
 
