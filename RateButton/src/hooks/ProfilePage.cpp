@@ -7,7 +7,28 @@
 using namespace geode::prelude;
 
 class $modify(StaffProfilePage, ProfilePage) {
+    void updateProfileNameGradient() {
+        // The account ID is the server owner's permanent account, even when a
+        // level uses a different per-level preview creator name.
+        if (!Utils::isOnGdps() || m_accountID != 1 || !m_usernameLabel) return;
+        auto* label=m_usernameLabel;
+        label->setColor({255,255,255});
+        int count=0;
+        for(auto* node:CCArrayExt<CCNode*>(label->getChildren()))
+            if(typeinfo_cast<CCSprite*>(node))++count;
+        if(count==0)return;
+        int i=0;
+        for(auto* node:CCArrayExt<CCNode*>(label->getChildren())) {
+            if(auto* glyph=typeinfo_cast<CCSprite*>(node)) {
+                float t=count>1?static_cast<float>(i)/static_cast<float>(count-1):0.f;
+                glyph->setColor({static_cast<GLubyte>(138+(255-138)*t),
+                    static_cast<GLubyte>(43+(48-43)*t),static_cast<GLubyte>(226+(48-226)*t)});
+                ++i;
+            }
+        }
+    }
     void updateRoleButton(float) {
+        updateProfileNameGradient();
         if (!m_mainLayer) return;
         auto* menu = typeinfo_cast<CCMenu*>(m_mainLayer->getChildByID("left-menu"));
         if (!menu) return;
