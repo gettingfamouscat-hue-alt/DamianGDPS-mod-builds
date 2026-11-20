@@ -36,7 +36,7 @@ std::string encode(std::string const& s) {
 }
 }
 void State::restore() {
- if(applied && label) { label->setString(original.c_str()); label->setColor(color); }
+ if(applied && label) { label->setString(original.c_str()); label->setPosition(position); label->setColor(color); }
  if(applied && button) button->setEnabled(enabled);
  applied=false; label=nullptr; button=nullptr;
 }
@@ -63,6 +63,7 @@ void apply(CCNode* root,int id,State& state) {
  auto* button=typeinfo_cast<CCMenuItem*>(node);
  if(!state.applied || state.label.data()!=label) {
   state.restore();state.label=label;state.button=button;state.original=label->getString();
+  state.position=label->getPosition();state.width=label->getContentSize().width;
   state.color=label->getColor();state.enabled=button?button->isEnabled():true;state.applied=true;
  }
  auto name=v.name;
@@ -70,6 +71,11 @@ void apply(CCNode* root,int id,State& state) {
  else if(state.original.starts_with("BY "))name="BY "+name;
  if(button)button->setEnabled(v.clickable);
  label->setString(name.c_str());
+ // BMFont changes its size without moving the sprite inside the native button.
+ // Preserve the original left edge instead of centering a shorter alias in the old width.
+ auto position=state.position;
+ position.x+=(label->getContentSize().width-state.width)*label->getScaleX()*label->getAnchorPoint().x;
+ label->setPosition(position);
  if(v.color.size()==6 && v.color.find_first_not_of("0123456789abcdefABCDEF")==std::string::npos) {
   auto n=std::stoul(v.color,nullptr,16);
   label->setColor({static_cast<GLubyte>(n>>16),static_cast<GLubyte>(n>>8),static_cast<GLubyte>(n)});

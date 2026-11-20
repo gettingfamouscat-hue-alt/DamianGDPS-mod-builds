@@ -9,6 +9,8 @@ struct State {
     std::string original;
     cocos2d::ccColor3B color{};
     bool enabled=true, applied=false;
+    cocos2d::CCPoint position{};
+    float width=0.f;
     void restore();
 };
 Value cached(int id);
