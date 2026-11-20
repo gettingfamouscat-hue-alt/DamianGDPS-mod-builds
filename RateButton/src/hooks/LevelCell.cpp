@@ -25,13 +25,6 @@ namespace {
         node->setPositionX(node->getPositionX() + dx);
     }
 
-    void hideId(CCNode *root, char const *id) {
-        if (!root || !id)
-            return;
-        if (auto *node = root->getChildByIDRecursive(id))
-            node->setVisible(false);
-    }
-
     CCNode *findPreviewNode(CCNode *root, char const *sprId, char const *bareId) {
         if (auto *n = root->getChildByIDRecursive(sprId))
             return n;
@@ -87,7 +80,7 @@ class $modify(MyLevelCell, LevelCell) {
         this->addChild(flag);
     }
 
-    // Impossible / Very Easy: face right, VIEW left — free title room without
+    // Impossible / Very Easy: face right, VIEW left â€” free title room without
     // widening the whole online list. Other difficulties stay stock.
     void applyCustomFaceLayout() {
         if (!m_level)
@@ -95,16 +88,11 @@ class $modify(MyLevelCell, LevelCell) {
         if (!Utils::isImpossibleDemonLevel(m_level) && !Utils::isVeryEasyLevel(m_level))
             return;
 
-        // Hide mid-cell clutter that competes with the title for width.
-        hideId(this, "song-name");
-        hideId(this, "length-icon");
-        hideId(this, "length-label");
-        hideId(this, "downloads-icon");
-        hideId(this, "downloads-label");
-        hideId(this, "likes-icon");
-        hideId(this, "likes-label");
-        hideId(this, "orbs-icon");
-        hideId(this, "orbs-label");
+        // Preserve the native song and stat rows for custom difficulties.
+        for (auto id : {"song-name", "length-icon", "length-label", "downloads-icon",
+                "downloads-label", "likes-icon", "likes-label", "orbs-icon", "orbs-label"}) {
+            if (auto* node = this->getChildByIDRecursive(id)) node->setVisible(true);
+        }
 
         if (!this->getChildByID(kLayoutNudgedFlag)) {
             if (auto *view = this->getChildByIDRecursive("view-button"))
@@ -131,6 +119,9 @@ class $modify(MyLevelCell, LevelCell) {
                 shiftNodeX(this->getChildByIDRecursive("creator-name"), kImpossibleTextShiftX);
                 shiftNodeX(this->getChildByIDRecursive("completed-icon"), kImpossibleTextShiftX);
                 shiftNodeX(this->getChildByIDRecursive("percentage-label"), kImpossibleTextShiftX);
+                for (auto id : {"song-name", "length-icon", "length-label", "downloads-icon",
+                        "downloads-label", "likes-icon", "likes-label", "orbs-icon", "orbs-label"})
+                    shiftNodeX(this->getChildByIDRecursive(id), kImpossibleTextShiftX);
             }
 
             auto *flag = CCNode::create();
