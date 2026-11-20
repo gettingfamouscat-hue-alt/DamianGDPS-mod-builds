@@ -6,6 +6,7 @@
 #include <chrono>
 #include <thread>
 #include <map>
+#include <algorithm>
 using namespace geode::prelude;
 namespace CreatorDisplay {
 namespace {
@@ -76,9 +77,24 @@ void apply(CCNode* root,int id,State& state,bool leftAlign) {
  auto position=state.position;
  if(leftAlign) position.x+=(label->getContentSize().width-state.width)*label->getScaleX()*label->getAnchorPoint().x;
  label->setPosition(position);
- if(v.color.size()==6 && v.color.find_first_not_of("0123456789abcdefABCDEF")==std::string::npos) {
-  auto n=std::stoul(v.color,nullptr,16);
-  label->setColor({static_cast<GLubyte>(n>>16),static_cast<GLubyte>(n>>8),static_cast<GLubyte>(n)});
+ auto hexColor=[](std::string const& hex) {
+  auto n=std::stoul(hex,nullptr,16);
+  return ccColor3B{static_cast<GLubyte>(n>>16),static_cast<GLubyte>(n>>8),static_cast<GLubyte>(n)};
+ };
+ if(v.color.size()==6) label->setColor(hexColor(v.color));
+ else if(v.color.size()==13 && v.color[6]=='-') {
+  label->setColor({255,255,255});
+  auto first=hexColor(v.color.substr(0,6)),last=hexColor(v.color.substr(7,6));
+  auto* glyphs=label->getChildren();
+  auto prefix=name.size()-v.name.size();
+  size_t index=0;
+  for(auto* child:CCArrayExt<CCNode*>(glyphs)) {
+   if(auto* glyph=typeinfo_cast<CCSprite*>(child)) {
+    float t=v.name.size()>1 ? static_cast<float>(std::clamp<int>(static_cast<int>(index)-static_cast<int>(prefix),0,static_cast<int>(v.name.size()-1)))/static_cast<float>(v.name.size()-1):0.f;
+    glyph->setColor({static_cast<GLubyte>(first.r+(last.r-first.r)*t),static_cast<GLubyte>(first.g+(last.g-first.g)*t),static_cast<GLubyte>(first.b+(last.b-first.b)*t)});
+    ++index;
+   }
+  }
  }
 }
 void save(int id,Value value,std::function<void(bool,std::string)> done) {
