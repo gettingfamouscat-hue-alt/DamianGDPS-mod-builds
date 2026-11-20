@@ -13,6 +13,8 @@ struct VersusSnapshot {
     int matchID = 0;
     int levelID = 0;
     std::string oppName;
+    int myIcon = 1, myColor1 = 0, myColor2 = 3;
+    int oppIcon = 1, oppColor1 = 0, oppColor2 = 3;
     int myLives = 3;
     int oppLives = 3;
     float myPercent = 0.f;

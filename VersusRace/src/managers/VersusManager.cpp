@@ -56,11 +56,19 @@ VersusSnapshot VersusManager::parseJson(matjson::Value const& v) const {
     s.levelID = static_cast<int>(v["levelID"].asInt().unwrapOr(0));
     if (v.contains("you")) {
         auto you = v["you"];
+        auto icon=you["icon"];
+        if(icon.isObject()) {s.myIcon=static_cast<int>(icon["icon"].asInt().unwrapOr(1));
+            s.myColor1=static_cast<int>(icon["color1"].asInt().unwrapOr(0));
+            s.myColor2=static_cast<int>(icon["color2"].asInt().unwrapOr(3));}
         s.myLives = static_cast<int>(you["lives"].asInt().unwrapOr(3));
         s.myPercent = static_cast<float>(you["percent"].asDouble().unwrapOr(0.0));
     }
     if (v.contains("opponent")) {
         auto opp = v["opponent"];
+        auto icon=opp["icon"];
+        if(icon.isObject()) {s.oppIcon=static_cast<int>(icon["icon"].asInt().unwrapOr(1));
+            s.oppColor1=static_cast<int>(icon["color1"].asInt().unwrapOr(0));
+            s.oppColor2=static_cast<int>(icon["color2"].asInt().unwrapOr(3));}
         s.oppName = opp["userName"].asString().unwrapOr("?");
         s.oppLives = static_cast<int>(opp["lives"].asInt().unwrapOr(3));
         s.oppPercent = static_cast<float>(opp["percent"].asDouble().unwrapOr(0.0));
