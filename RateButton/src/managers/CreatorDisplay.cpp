@@ -41,7 +41,7 @@ void State::restore() {
  applied=false; label=nullptr; button=nullptr;
 }
 Value cached(int id) { return cache[key(id)].value; }
-void apply(CCNode* root,int id,State& state) {
+void apply(CCNode* root,int id,State& state,bool leftAlign) {
  if(id<=0 || !Utils::isOnGdps()) return;
  auto k=key(id); auto& e=cache[k];
  if(!e.pending && (e.fetched==Clock::time_point{} || Clock::now()-e.fetched>std::chrono::seconds(15))) {
@@ -74,7 +74,7 @@ void apply(CCNode* root,int id,State& state) {
  // BMFont changes its size without moving the sprite inside the native button.
  // Preserve the original left edge instead of centering a shorter alias in the old width.
  auto position=state.position;
- position.x+=(label->getContentSize().width-state.width)*label->getScaleX()*label->getAnchorPoint().x;
+ if(leftAlign) position.x+=(label->getContentSize().width-state.width)*label->getScaleX()*label->getAnchorPoint().x;
  label->setPosition(position);
  if(v.color.size()==6 && v.color.find_first_not_of("0123456789abcdefABCDEF")==std::string::npos) {
   auto n=std::stoul(v.color,nullptr,16);

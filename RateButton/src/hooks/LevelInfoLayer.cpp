@@ -165,7 +165,7 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
     }
     void updateCreatorDisplay() {
         if(!m_level || m_level->m_levelID<=0) return;
-        CreatorDisplay::apply(this,m_level->m_levelID,m_fields->display);
+        CreatorDisplay::apply(this,m_level->m_levelID,m_fields->display,false);
         auto* menu=this->rateMenu(); if(!menu)return;
         auto* existing=menu->getChildByID("creator-display-button"_spr);
         if(!SessionManager::canManageRoles()) { if(existing){existing->removeFromParent();menu->updateLayout();}return; }

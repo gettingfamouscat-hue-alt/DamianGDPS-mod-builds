@@ -14,6 +14,6 @@ struct State {
     void restore();
 };
 Value cached(int id);
-void apply(cocos2d::CCNode* root, int id, State& state);
+void apply(cocos2d::CCNode* root, int id, State& state, bool leftAlign = true);
 void save(int id, Value value, std::function<void(bool,std::string)> done);
 }
