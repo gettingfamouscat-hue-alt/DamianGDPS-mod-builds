@@ -144,7 +144,7 @@ namespace CustomFace {
             if (fire->getContentSize().width > 0.f)
                 fire->setScale(desiredWidth / fire->getContentSize().width);
             fire->setPositionY(face->getPositionY()
-                - face->getScaledContentSize().height * 0.16f);
+                - face->getScaledContentSize().height * 0.22f);
         }
         fire->setAnchorPoint(host->getAnchorPoint());
         fire->setZOrder(host->getZOrder()); // face is +1 → fire sits behind
