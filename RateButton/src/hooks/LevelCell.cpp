@@ -9,7 +9,7 @@ namespace {
     // Custom-face list cells (Impossible / Very Easy): bring VIEW left and
     // difficulty face right so the title isn't pinched between them.
     constexpr float kCustomViewShiftX = -22.f;
-    constexpr float kCustomFaceShiftX = 18.f;
+    constexpr float kCustomFaceShiftX = 6.f;
     constexpr float kImpossibleFaceShiftX = 20.f;
     constexpr float kImpossibleTextShiftX = 14.f;
     constexpr float kCustomNameShiftX = 4.f;

@@ -8,7 +8,7 @@ permissions:
 jobs:
   build:
     name: macOS - ${{ matrix.project }}
-    runs-on: macos-latest
+    runs-on: macos-15-intel
     strategy:
       fail-fast: false
       matrix:
