@@ -1,0 +1,12 @@
+DAMIAN GDPS MODS
+
+Builds: run the Build universal Mac GDPS mods workflow manually, or push a
+source change to main. Both projects build universal Intel/Apple Silicon
+macOS libraries. No database or server secrets are stored in this repository.
+
+Install m336.rate-button.geode AND damian.versus.geode through Geode, then
+restart GD. Disable any tipp7 Versus mod; it is not used by this project.
+Target game version: GD 2.2081. Loader: Geode 5.10.1 or compatible.
+For local Wi-Fi play, set Damian Versus -> GDPS Base URL to the host's
+http://LAN-IP/gdps address. The supplied default matches this GDPS host.
+Rate Button's Custom GDPS compatibility fallback is on by default.

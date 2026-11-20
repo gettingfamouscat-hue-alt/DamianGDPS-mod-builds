@@ -3,6 +3,14 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+    paths:
+      - 'RateButton/src/**'
+      - 'RateButton/resources/**'
+      - 'RateButton/mod.json'
+      - 'RateButton/CMakeLists.txt'
+      - 'VersusRace/src/**'
+      - 'VersusRace/mod.json'
+      - 'VersusRace/CMakeLists.txt' 
 permissions:
   contents: read
 jobs:
@@ -12,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [RateButton]
+        project: [RateButton, VersusRace]
     steps:
       - uses: actions/checkout@v7
       - uses: geode-sdk/build-geode-mod@main
