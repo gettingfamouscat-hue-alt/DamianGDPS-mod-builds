@@ -2,6 +2,7 @@
 #include <Geode/modify/LevelCell.hpp>
 #include "../utils/CustomFace.hpp"
 #include "../utils/Utils.hpp"
+#include "../managers/CreatorDisplay.hpp"
 
 using namespace geode::prelude;
 
@@ -32,6 +33,11 @@ namespace {
 }
 
 class $modify(MyLevelCell, LevelCell) {
+    struct Fields { CreatorDisplay::State display; };
+    void pollCreator(float) { if(m_level) CreatorDisplay::apply(this,m_level->m_levelID,m_fields->display); }
+    void onExit() { this->unschedule(schedule_selector(MyLevelCell::pollCreator)); LevelCell::onExit(); }
+    void onEnter() { LevelCell::onEnter(); this->schedule(schedule_selector(MyLevelCell::pollCreator),.5f); }
+
     void applyCustomDifficultyFace() {
         if (!m_level)
             return;
@@ -194,11 +200,14 @@ class $modify(MyLevelCell, LevelCell) {
         LevelCell::loadCustomLevelCell();
         this->applyCustomDifficultyFace();
         this->applyCustomFaceLayout();
+        this->pollCreator(0);
     }
 
     void loadFromLevel(GJGameLevel *level) {
+        m_fields->display.restore();
         LevelCell::loadFromLevel(level);
         this->applyCustomDifficultyFace();
         this->applyCustomFaceLayout();
+        this->pollCreator(0);
     }
 };
