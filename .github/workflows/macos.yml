@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [RateButton, VersusRace]
+        project: [RateButton]
     steps:
       - uses: actions/checkout@v7
       - uses: geode-sdk/build-geode-mod@main

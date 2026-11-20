@@ -64,10 +64,13 @@ protected:
         std::vector<DiffPickOption> const &options,
         std::function<void(int)> onPick
     ) {
-        auto const rows = static_cast<float>(options.size());
-        constexpr float kRow = 46.f;
-        auto const height = 70.f + rows * kRow;
-        if (!Popup::init(250.f, height))
+        auto const win = CCDirector::sharedDirector()->getWinSize();
+        int const columns = options.size() > 4 ? 2 : 1;
+        int const rows = (static_cast<int>(options.size()) + columns - 1) / columns;
+        float const width = std::min(columns == 2 ? 460.f : 250.f, win.width - 24.f);
+        float const rowHeight = std::min(46.f, (win.height - 94.f) / std::max(1, rows));
+        float const height = 70.f + rows * rowHeight;
+        if (!Popup::init(width, height))
             return false;
 
         m_onPick = std::move(onPick);
@@ -83,8 +86,13 @@ protected:
             );
             btn->setTag(opt.value);
             btn->setID(fmt::format("pick-{}"_spr, opt.value));
+            float const columnWidth = (width - 40.f - (columns - 1) * 10.f) / columns;
+            btn->setScale(std::min(columnWidth / 210.f, (rowHeight - 4.f) / 42.f));
+            int const column = index % columns;
+            int const row = index / columns;
+            float const x = (column - (columns - 1) * .5f) * (columnWidth + 10.f);
             m_buttonMenu->addChildAtPosition(
-                btn, Anchor::Top, { 0.f, -52.f - index * kRow }
+                btn, Anchor::Top, { x, -52.f - row * rowHeight }
             );
             ++index;
         }
