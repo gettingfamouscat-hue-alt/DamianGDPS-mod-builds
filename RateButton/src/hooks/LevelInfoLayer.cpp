@@ -164,7 +164,7 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
             if(auto* p=CreatorDisplayPopup::create(m_level->m_levelID)) p->show();
     }
     void updateCreatorDisplay() {
-        if(!m_level) return;
+        if(!m_level || m_level->m_levelID<=0) return;
         CreatorDisplay::apply(this,m_level->m_levelID,m_fields->display);
         auto* menu=this->rateMenu(); if(!menu)return;
         auto* existing=menu->getChildByID("creator-display-button"_spr);
@@ -181,6 +181,10 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
         this->updateCreatorDisplay();
     }
 
+    void onEnter() {
+        LevelInfoLayer::onEnter();
+        if(Utils::isOnGdps()) this->schedule(schedule_selector(MyLevelInfoLayer::pollPermissions),.5f);
+    }
     void onExit() {
         this->unschedule(schedule_selector(MyLevelInfoLayer::pollPermissions));
         LevelInfoLayer::onExit();

@@ -88,7 +88,7 @@ void save(int id,Value value,std::function<void(bool,std::string)> done) {
    auto* am=GJAccountManager::sharedState();
    if(am->m_accountID!=account||std::string(am->m_GJP2)!=credential||Utils::serverBaseUrl()!=server){done(false,"Account or server changed.");return;}
    auto parsed=res.json();if(!parsed){done(false,"Could not save. Check the server connection.");return;}
-   auto b=parsed.unwrap();if(!res.ok()||!b["ok"].asBool().unwrapOr(false)){done(false,b["error"].asString().unwrapOr("Save denied."));return;}
+   auto b=parsed.unwrap();if(!b.isObject()){done(false,"Invalid server response.");return;}if(!res.ok()||!b["ok"].asBool().unwrapOr(false)){done(false,b["error"].asString().unwrapOr("Save denied."));return;}
    auto& e=cache[k];++e.revision;e.pending=false;e.value=parse(b["display"]);e.fetched=Clock::now();
    done(true,"Creator display saved. Other players with the updated mod will see it automatically.");
   });
