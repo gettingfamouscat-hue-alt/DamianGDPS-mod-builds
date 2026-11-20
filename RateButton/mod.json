@@ -8,7 +8,7 @@
     },
     "id": "m336.rate-button",
     "name": "Rate Button (GDPS only)",
-    "version": "v1.1.13",
+    "version": "v1.2.0",
     "developer": "M336",
     "description": "Rate levels like RobTop!",
     "links": {
@@ -53,6 +53,12 @@
             "description": "Enable custom faces and controls on a patched GDPS client when Server API is not available. Supports Mac and Windows.",
             "type": "bool",
             "default": true
+        },
+        "server-url": {
+            "name": "GDPS Base URL",
+            "description": "Used for authenticated permissions and owner role controls when Server API is not available. No trailing /database.",
+            "type": "string",
+            "default": "http://192.168.0.143/gdps"
         }
     },
     "resources": {

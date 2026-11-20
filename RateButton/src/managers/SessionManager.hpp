@@ -1,4 +1,6 @@
 #pragma once
+#include <functional>
+#include <string>
 
 class SessionManager {
 public:
@@ -12,6 +14,10 @@ public:
     static bool canUseRateButton();
     static bool isElderMod();
     static void setModAccessLevel(int level);
+    static void refresh(bool force = false);
+    static bool canManageRoles();
+    static int accountID();
+    static void assignRole(int target, std::string role, std::function<void(bool, std::string)> done);
 
 private:
     static bool s_loaded;

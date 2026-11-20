@@ -13,6 +13,7 @@
 using namespace geode::prelude;
 
 bool DevRateStarsPopup::init(int levelId) {
+    if (!SessionManager::canUseRateButton()) return false;
     if (!Popup::init(360.f, 210.f))
         return false;
 
@@ -393,6 +394,7 @@ void DevRateStarsPopup::refreshLevelPage() const {
 }
 
 void DevRateStarsPopup::onSendOnly(CCObject *) {
+    if (!SessionManager::canUseRateButton()) { Notification::create("No staff permission", NotificationIcon::Error)->show(); return; }
     auto const stars = this->starsToSubmit();
 
     if (m_selectedStars > 0) {
@@ -440,6 +442,7 @@ std::string_view DevRateStarsPopup::difficultyCommandName() const {
 }
 
 void DevRateStarsPopup::onSubmit(CCObject *) {
+    if (!SessionManager::isElderMod()) { Notification::create("Rating requires Elder Mod or Admin", NotificationIcon::Error)->show(); return; }
     if (m_selectedStars > 0) {
         // Face always from picker. Stars only if the star logo toggle is on.
         GameLevelManager::sharedState()->uploadComment(

@@ -14,7 +14,7 @@ class $modify(MenuLayer) {
 
         if (Utils::isOnGdps()) {
             // Warm mod access early so LevelInfoLayer already has access>=1.
-            GameLevelManager::sharedState()->requestUserAccess();
+            SessionManager::refresh(true);
         } else if (!SessionManager::ShownGDPSWarning) {
             auto *alert = FLAlertLayer::create(
                 "Rate Button Disabled",

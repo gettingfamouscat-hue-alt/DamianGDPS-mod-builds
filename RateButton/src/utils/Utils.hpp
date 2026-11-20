@@ -175,4 +175,5 @@ namespace Utils {
     }
 
     bool isOnGdps();
+    std::string serverBaseUrl();
 }

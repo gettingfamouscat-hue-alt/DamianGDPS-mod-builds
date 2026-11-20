@@ -5,6 +5,17 @@
 
 using namespace geode::prelude;
 
+std::string Utils::serverBaseUrl() {
+    std::string url = Mod::get()->getSettingValue<std::string>("server-url");
+    if (Loader::get()->isModLoaded("km7dev.server_api")) {
+        std::string current = ServerAPIEvents::getCurrentServer().url;
+        if (!current.empty() && current != "NONE_REGISTERED") url = current;
+    }
+    while (!url.empty() && url.back() == '/') url.pop_back();
+    if (url.ends_with("/database")) url.resize(url.size() - 9);
+    return url;
+}
+
 bool Utils::isOnGdps() {
     if (Loader::get()->isModLoaded("km7dev.server_api")) {
         std::string url = ServerAPIEvents::getCurrentServer().url;

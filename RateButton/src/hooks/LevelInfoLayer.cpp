@@ -102,6 +102,7 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
 
     void ensureRateButton() {
         SessionManager::ensureLoaded();
+        this->hideVanillaRateButtons();
 
         auto *menu = this->rateMenu();
         if (!menu) {
@@ -148,29 +149,21 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
         if (!Utils::isOnGdps())
             return true;
 
-        // Only hide stock mod-rate when our yellow button will replace it.
+        SessionManager::refresh(true);
         this->ensureRateButton();
-
-        // Refresh mod access every visit so newly assigned roles show up.
-        GameLevelManager::sharedState()->requestUserAccess();
-
-        this->retain();
-        std::thread([self = this]() {
-            for (int i = 0; i < 16; ++i) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(400));
-                Loader::get()->queueInMainThread([self, i]() {
-                    if (!self)
-                        return;
-                    self->applyCustomDifficultyFace();
-                    if (Utils::isOnGdps())
-                        self->ensureRateButton();
-                    if (i == 15)
-                        self->release();
-                });
-            }
-        }).detach();
+        this->schedule(schedule_selector(MyLevelInfoLayer::pollPermissions), .5f);
 
         return true;
+    }
+
+    void pollPermissions(float) {
+        SessionManager::refresh();
+        this->ensureRateButton();
+    }
+
+    void onExit() {
+        this->unschedule(schedule_selector(MyLevelInfoLayer::pollPermissions));
+        LevelInfoLayer::onExit();
     }
 
     void updateLabelValues() {
@@ -239,12 +232,12 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
                         Mod::get()->setSavedValue("shown-rate-button-warning", true);
                         SessionManager::ShownRateButtonWarning = true;
 
-                        DevRateStarsPopup::create(levelID)->show();
+                        if (auto* popup = DevRateStarsPopup::create(levelID)) popup->show();
                     }
                 }
             );
         } else {
-            DevRateStarsPopup::create(m_level->m_levelID)->show();
+            if (auto* popup = DevRateStarsPopup::create(m_level->m_levelID)) popup->show();
         }
     }
 };
