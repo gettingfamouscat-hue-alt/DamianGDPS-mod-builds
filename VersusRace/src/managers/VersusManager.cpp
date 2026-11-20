@@ -24,7 +24,7 @@ std::string VersusManager::baseUrl() const {
         url.pop_back();
 
 #if VERSUS_HAS_SERVER_API
-    if (Loader::get()->isModLoaded("km7dev.server_api")) {
+    if (url.empty() && Loader::get()->isModLoaded("km7dev.server_api")) {
         auto cur = ServerAPIEvents::getCurrentServer().url;
         if (!cur.empty() && cur != "NONE_REGISTERED") {
             while (!cur.empty() && cur.back() == '/')
@@ -113,10 +113,10 @@ void VersusManager::postAsync(
 
     std::thread([this, url, accountID, gjp2, generation, extra = std::move(extra), then = std::move(then)]() mutable {
         auto req = web::WebRequest();
-        req.param("accountID", std::to_string(accountID));
-        req.param("gjp2", gjp2);
-        for (auto const& [k, v] : extra)
-            req.param(k, v);
+        std::string form = "accountID=" + std::to_string(accountID) + "&gjp2=" + gjp2;
+        for (auto const& [k, v] : extra) form += "&" + k + "=" + v;
+        req.header("Content-Type", "application/x-www-form-urlencoded");
+        req.bodyString(form);
         req.timeout(std::chrono::seconds(8));
 
         auto res = req.postSync(url);

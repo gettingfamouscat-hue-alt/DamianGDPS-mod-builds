@@ -75,8 +75,8 @@ void SessionManager::refresh(bool force) {
     auto const url = currentServer + "/roles/access.php";
     std::thread([epoch, account, credential, url]() {
         auto request = web::WebRequest();
-        request.param("accountID", std::to_string(account));
-        request.param("gjp2", credential);
+        request.header("Content-Type", "application/x-www-form-urlencoded");
+        request.bodyString("accountID=" + std::to_string(account) + "&gjp2=" + credential);
         request.timeout(std::chrono::seconds(8));
         auto response = request.postSync(url);
         Loader::get()->queueInMainThread([epoch, account, response = std::move(response)]() mutable {
@@ -109,10 +109,9 @@ void SessionManager::assignRole(int target, std::string role, std::function<void
     auto const url = currentServer + "/roles/set.php";
     std::thread([epoch, account, credential, url, target, role, done = std::move(done)]() mutable {
         auto request = web::WebRequest();
-        request.param("accountID", std::to_string(account));
-        request.param("gjp2", credential);
-        request.param("targetAccountID", std::to_string(target));
-        request.param("role", role);
+        request.header("Content-Type", "application/x-www-form-urlencoded");
+        request.bodyString("accountID=" + std::to_string(account) + "&gjp2=" + credential
+            + "&targetAccountID=" + std::to_string(target) + "&role=" + role);
         request.timeout(std::chrono::seconds(8));
         auto response = request.postSync(url);
         Loader::get()->queueInMainThread([epoch, target, response = std::move(response), done = std::move(done)]() mutable {

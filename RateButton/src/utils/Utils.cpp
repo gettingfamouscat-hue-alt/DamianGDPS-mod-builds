@@ -7,7 +7,7 @@ using namespace geode::prelude;
 
 std::string Utils::serverBaseUrl() {
     std::string url = Mod::get()->getSettingValue<std::string>("server-url");
-    if (Loader::get()->isModLoaded("km7dev.server_api")) {
+    if (url.empty() && Loader::get()->isModLoaded("km7dev.server_api")) {
         std::string current = ServerAPIEvents::getCurrentServer().url;
         if (!current.empty() && current != "NONE_REGISTERED") url = current;
     }
