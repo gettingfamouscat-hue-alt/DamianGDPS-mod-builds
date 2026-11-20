@@ -1,0 +1,34 @@
+{
+    "geode": "5.10.1",
+    "gd": {
+        "win": "2.2081",
+        "android": "2.2081",
+        "mac": "2.2081",
+        "ios": "2.2081"
+    },
+    "id": "damian.versus",
+    "name": "Damian Versus",
+    "version": "v1.0.3",
+    "developer": "Damian GDPS",
+    "description": "Makes the Versus tab work: find a match, 3-life race, live % overlay.",
+    "tags": [
+        "online",
+        "utility",
+        "gdps"
+    ],
+    "settings": {
+        "server-url": {
+            "name": "GDPS Base URL",
+            "description": "No trailing slash. Versus API is at {url}/versus/",
+            "type": "string",
+            "default": "http://192.168.0.143/gdps"
+        }
+    },
+    "dependencies": {
+        "geode.node-ids": ">=v1.23.3",
+        "km7dev.server_api": {
+            "version": ">=v4.0.0",
+            "required": false
+        }
+    }
+}

@@ -1,0 +1,174 @@
+#include <Geode/Geode.hpp>
+#include <Geode/modify/LevelCell.hpp>
+#include "../utils/CustomFace.hpp"
+#include "../utils/Utils.hpp"
+
+using namespace geode::prelude;
+
+namespace {
+    // Custom-face list cells (Impossible / Very Easy): bring VIEW left and
+    // difficulty face right so the title isn't pinched between them.
+    constexpr float kCustomViewShiftX = -22.f;
+    constexpr float kCustomFaceShiftX = 18.f;
+    constexpr float kImpossibleFaceShiftX = 20.f;
+    constexpr float kImpossibleTextShiftX = 14.f;
+    constexpr float kCustomNameShiftX = 4.f;
+    constexpr float kCustomPreviewScale = 0.85f;
+    // Stock name width is tight against the right-side VIEW/thumbnail.
+    constexpr float kCustomNamePad = 72.f;
+    constexpr char const *kLayoutNudgedFlag = "rb-custom-layout-nudged";
+    constexpr char const *kPreviewNudgedFlag = "rb-custom-preview-nudged";
+
+    void shiftNodeX(CCNode *node, float dx) {
+        if (!node || dx == 0.f)
+            return;
+        node->setPositionX(node->getPositionX() + dx);
+    }
+
+    void hideId(CCNode *root, char const *id) {
+        if (!root || !id)
+            return;
+        if (auto *node = root->getChildByIDRecursive(id))
+            node->setVisible(false);
+    }
+
+    CCNode *findPreviewNode(CCNode *root, char const *sprId, char const *bareId) {
+        if (auto *n = root->getChildByIDRecursive(sprId))
+            return n;
+        return root->getChildByIDRecursive(bareId);
+    }
+}
+
+class $modify(MyLevelCell, LevelCell) {
+    void applyCustomDifficultyFace() {
+        if (!m_level)
+            return;
+
+        CCNode *host = nullptr;
+        if (auto *main = m_mainLayer) {
+            if (auto *container = main->getChildByID("difficulty-container"))
+                host = container->getChildByID("difficulty-sprite");
+        }
+        if (!host)
+            host = this->getChildByIDRecursive("difficulty-sprite");
+        if (!host)
+            return;
+
+        CustomFace::applyForLevel(host, m_level);
+    }
+
+    void nudgeCustomPreview() {
+        if (this->getChildByID(kPreviewNudgedFlag))
+            return;
+
+        auto nudge = [](CCNode *node) {
+            if (!node)
+                return;
+            // Keep thumbnail with VIEW as it moves left.
+            node->setScale(node->getScale() * kCustomPreviewScale);
+            shiftNodeX(node, kCustomViewShiftX * 0.5f);
+        };
+
+        auto *clip = findPreviewNode(
+            this, "cdc.level_thumbnails/clipping-node", "clipping-node"
+        );
+        auto *sep = findPreviewNode(
+            this, "cdc.level_thumbnails/separator", "separator"
+        );
+        if (!clip && !sep)
+            return;
+
+        nudge(clip);
+        nudge(sep);
+
+        // One-shot marker so a delayed pass doesn't double-scale.
+        auto *flag = CCNode::create();
+        flag->setID(kPreviewNudgedFlag);
+        this->addChild(flag);
+    }
+
+    // Impossible / Very Easy: face right, VIEW left — free title room without
+    // widening the whole online list. Other difficulties stay stock.
+    void applyCustomFaceLayout() {
+        if (!m_level)
+            return;
+        if (!Utils::isImpossibleDemonLevel(m_level) && !Utils::isVeryEasyLevel(m_level))
+            return;
+
+        // Hide mid-cell clutter that competes with the title for width.
+        hideId(this, "song-name");
+        hideId(this, "length-icon");
+        hideId(this, "length-label");
+        hideId(this, "downloads-icon");
+        hideId(this, "downloads-label");
+        hideId(this, "likes-icon");
+        hideId(this, "likes-label");
+        hideId(this, "orbs-icon");
+        hideId(this, "orbs-label");
+
+        if (!this->getChildByID(kLayoutNudgedFlag)) {
+            if (auto *view = this->getChildByIDRecursive("view-button"))
+                shiftNodeX(view, kCustomViewShiftX);
+
+            // Shift face column right (stock sprite + custom overlay).
+            CCNode *faceRoot = nullptr;
+            if (auto *main = m_mainLayer)
+                faceRoot = main->getChildByID("difficulty-container");
+            if (!faceRoot)
+                faceRoot = this->getChildByIDRecursive("difficulty-container");
+            if (!faceRoot)
+                faceRoot = this->getChildByIDRecursive("difficulty-sprite");
+            shiftNodeX(faceRoot, Utils::isImpossibleDemonLevel(m_level)
+                ? kImpossibleFaceShiftX : kCustomFaceShiftX);
+
+            if (auto *label = typeinfo_cast<CCLabelBMFont *>(
+                    this->getChildByIDRecursive("level-name")
+                )) {
+                shiftNodeX(label, Utils::isImpossibleDemonLevel(m_level)
+                    ? kCustomNameShiftX + kImpossibleTextShiftX : kCustomNameShiftX);
+            }
+            if (Utils::isImpossibleDemonLevel(m_level)) {
+                shiftNodeX(this->getChildByIDRecursive("creator-name"), kImpossibleTextShiftX);
+                shiftNodeX(this->getChildByIDRecursive("completed-icon"), kImpossibleTextShiftX);
+                shiftNodeX(this->getChildByIDRecursive("percentage-label"), kImpossibleTextShiftX);
+            }
+
+            auto *flag = CCNode::create();
+            flag->setID(kLayoutNudgedFlag);
+            this->addChild(flag);
+        }
+
+        this->nudgeCustomPreview();
+        // Level Thumbnails often attaches after loadCustomLevelCell returns.
+        this->retain();
+        Loader::get()->queueInMainThread([self = this]() {
+            if (self) {
+                self->nudgeCustomPreview();
+                self->release();
+            }
+        });
+
+        auto *label = typeinfo_cast<CCLabelBMFont *>(
+            this->getChildByIDRecursive("level-name")
+        );
+        if (!label)
+            return;
+
+        float maxWidth = m_width - kCustomNamePad;
+        if (maxWidth < 160.f)
+            maxWidth = 160.f;
+        label->limitLabelWidth(maxWidth, label->getScale(), 0.f);
+    }
+
+    void loadCustomLevelCell() {
+        LevelCell::loadCustomLevelCell();
+        this->applyCustomDifficultyFace();
+        this->applyCustomFaceLayout();
+    }
+
+    void loadFromLevel(GJGameLevel *level) {
+        LevelCell::loadFromLevel(level);
+        this->applyCustomDifficultyFace();
+        this->applyCustomFaceLayout();
+    }
+};

@@ -1,0 +1,28 @@
+name: Build universal Mac GDPS mods
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  build:
+    name: macOS - ${{ matrix.project }}
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [RateButton, VersusRace]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: geode-sdk/build-geode-mod@main
+        id: build
+        with:
+          path: ${{ matrix.project }}
+          target: MacOS
+          sdk: given
+          use-lto: false
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.project }}-macOS
+          path: ${{ steps.build.outputs.build-output }}/*.geode

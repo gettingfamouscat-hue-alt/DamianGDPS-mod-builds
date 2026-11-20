@@ -1,0 +1,71 @@
+{
+    "geode": "5.10.1",
+    "gd": {
+        "win": "2.2081",
+        "android": "2.2081",
+        "mac": "2.2081",
+        "ios": "2.2081"
+    },
+    "id": "m336.rate-button",
+    "name": "Rate Button (GDPS only)",
+    "version": "v1.1.11",
+    "developer": "M336",
+    "description": "Rate levels like RobTop!",
+    "links": {
+        "community": "https://discord.gg/adbqkyvbZa",
+        "source": "https://github.com/M336G/RateButton"
+    },
+    "issues": {
+        "info": "Having an issue with the mod?",
+        "url": "https://github.com/M336G/RateButton/issues"
+    },
+    "tags": [
+        "online",
+        "utility",
+        "interface",
+        "gdps"
+    ],
+    "settings": {
+        "extra-settings": {
+            "type": "title",
+            "name": "Extra Settings"
+        },
+        "disable-daily-button": {
+            "name": "Disable Daily Button",
+            "description": "Disable the small green 'Set Daily' button appearing in the interface allowing you to set the level for daily easily",
+            "type": "bool",
+            "default": false
+        },
+        "disable-weekly-button": {
+            "name": "Disable Weekly Button",
+            "description": "Disable the small green 'Set Week' button appearing in the interface allowing you to set the level for weekly easily",
+            "type": "bool",
+            "default": false
+        },
+        "disable-send-only-button": {
+            "name": "Disable Send Only Button",
+            "description": "Hide the extra 'Send Only' button for Elder Mods (Normal Mods always get Send)",
+            "type": "bool",
+            "default": false
+        },
+        "custom-gdps-mode": {
+            "name": "Custom GDPS compatibility",
+            "description": "Enable custom faces and controls on a patched GDPS client when Server API is not available. Supports Mac and Windows.",
+            "type": "bool",
+            "default": true
+        }
+    },
+    "resources": {
+        "files": [
+            "resources/impossible_demon.png",
+            "resources/very_easy.png"
+        ]
+    },
+    "dependencies": {
+        "geode.node-ids": ">=v1.23.3",
+        "km7dev.server_api": {
+            "version": ">=v4.0.0",
+            "required": false
+        }
+    }
+}
