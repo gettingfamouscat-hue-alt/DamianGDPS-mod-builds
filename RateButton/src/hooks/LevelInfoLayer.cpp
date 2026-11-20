@@ -1,6 +1,7 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/LevelInfoLayer.hpp>
 #include "../DevRateStarsPopup.hpp"
+#include "../CreatorDisplayPopup.hpp"
 #include "../managers/SessionManager.hpp"
 #include "../utils/CustomFace.hpp"
 #include "../utils/Utils.hpp"
@@ -41,6 +42,7 @@ void rewriteStarsRequestedText(CCNode *node, char const *diffName) {
 class $modify(MyLevelInfoLayer, LevelInfoLayer) {
     struct Fields {
         CCSprite *m_customFaceOverlay = nullptr;
+        CreatorDisplay::State display;
     };
 
     void hideVanillaRateButtons() {
@@ -151,14 +153,32 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
 
         SessionManager::refresh(true);
         this->ensureRateButton();
+        this->updateCreatorDisplay();
         this->schedule(schedule_selector(MyLevelInfoLayer::pollPermissions), .5f);
 
         return true;
     }
 
+    void onCreatorDisplay(CCObject*) {
+        if(SessionManager::canManageRoles() && m_level)
+            if(auto* p=CreatorDisplayPopup::create(m_level->m_levelID)) p->show();
+    }
+    void updateCreatorDisplay() {
+        if(!m_level) return;
+        CreatorDisplay::apply(this,m_level->m_levelID,m_fields->display);
+        auto* menu=this->rateMenu(); if(!menu)return;
+        auto* existing=menu->getChildByID("creator-display-button"_spr);
+        if(!SessionManager::canManageRoles()) { if(existing){existing->removeFromParent();menu->updateLayout();}return; }
+        if(existing)return;
+        auto* sprite=ButtonSprite::create("Creator");
+        sprite->setScale(.45f);
+        auto* b=CCMenuItemSpriteExtra::create(sprite,this,menu_selector(MyLevelInfoLayer::onCreatorDisplay));
+        b->setID("creator-display-button"_spr);menu->addChild(b);menu->updateLayout();
+    }
     void pollPermissions(float) {
         SessionManager::refresh();
         this->ensureRateButton();
+        this->updateCreatorDisplay();
     }
 
     void onExit() {
@@ -177,6 +197,7 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
         if (!Utils::isOnGdps())
             return;
         this->ensureRateButton();
+        this->updateCreatorDisplay();
         this->updateLabelValues();
     }
 
@@ -186,6 +207,7 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
         if (!Utils::isOnGdps())
             return;
         this->ensureRateButton();
+        this->updateCreatorDisplay();
         this->updateLabelValues();
     }
 
