@@ -121,7 +121,7 @@ namespace CustomFace {
 
     // Stock fire is a child of GJDifficultySprite; hiding the host kills it.
     // Redraw the coin behind our custom face so tiers stay colored.
-    inline void addFeatureFire(CCNode *parent, CCNode *host, CCSprite *face, GJGameLevel *level) {
+    inline void addFeatureFire(CCNode *parent, CCNode *host, CCSprite *face, GJGameLevel *level, bool customFace = true) {
         if (!parent || !host || !face)
             return;
         clearId(parent, ID_FEATURE_FIRE);
@@ -135,7 +135,7 @@ namespace CustomFace {
             return;
 
         scaleToHost(fire, host);
-        fire->setScale(fire->getScale() * CUSTOM_FACE_SCALE);
+        fire->setScale(fire->getScale() * (customFace ? CUSTOM_FACE_SCALE : 1.07f));
         fire->setPosition(face->getPosition());
         if (Utils::isVeryEasyLevel(level)) {
             // The upper part of the PNG is a halo, not the round face.
@@ -147,7 +147,7 @@ namespace CustomFace {
                 - face->getScaledContentSize().height * 0.22f);
         }
         fire->setAnchorPoint(host->getAnchorPoint());
-        fire->setZOrder(host->getZOrder()); // face is +1 → fire sits behind
+        fire->setZOrder(host->getZOrder() - (customFace ? 0 : 1)); // fire sits behind the face
         fire->setColor({ 255, 255, 255 });
         fire->setOpacity(255);
         fire->setID(ID_FEATURE_FIRE);
@@ -333,6 +333,12 @@ namespace CustomFace {
 
         if (parent)
             clearOverlays(parent, host);
+        // Vanilla skips the featured fire for N/A. Fire is independent of
+        // the star award, so keep it visible even when stars are toggled off.
+        if (parent && level->m_difficulty == GJDifficulty::NA) {
+            if (auto* face = typeinfo_cast<CCSprite*>(host))
+                addFeatureFire(parent, host, face, level, false);
+        }
         setStarRowNudge(parent, false);
         return false;
     }
