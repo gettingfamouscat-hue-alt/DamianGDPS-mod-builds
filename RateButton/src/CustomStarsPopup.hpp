@@ -17,15 +17,19 @@ class CustomStarsPopup : public Popup {
         onChoice = std::move(callback);
         setTitle("Stars Given");
 
-        auto* hint = CCLabelBMFont::create("0 to 999 stars; face stays the same", "bigFont.fnt");
+        auto* hint = CCLabelBMFont::create("0 to 2,147,483,647 stars", "bigFont.fnt");
         hint->setScale(.3f);
-        hint->setPosition({135.f, 112.f});
+        hint->setPosition({135.f, 115.f});
         m_mainLayer->addChild(hint);
+        auto* faceHint = CCLabelBMFont::create("Face stays the same", "bigFont.fnt");
+        faceHint->setScale(.28f);
+        faceHint->setPosition({135.f, 96.f});
+        m_mainLayer->addChild(faceHint);
 
         input = TextInput::create(135.f, "Star amount");
         input->setFilter("0123456789");
         input->setString(std::to_string(current));
-        input->setPosition({135.f, 80.f});
+        input->setPosition({135.f, 70.f});
         m_mainLayer->addChild(input);
 
         auto* match = CCMenuItemSpriteExtra::create(
@@ -54,8 +58,8 @@ class CustomStarsPopup : public Popup {
         int stars = 0;
         auto [end, error] = std::from_chars(value.data(), value.data() + value.size(), stars);
         if (value.empty() || error != std::errc{} || end != value.data() + value.size()
-            || stars < 0 || stars > 999) {
-            FLAlertLayer::create("Invalid stars", "Enter a whole number from 0 to 999.", "OK")->show();
+            || stars < 0 || stars > 2147483647) {
+            FLAlertLayer::create("Invalid stars", "Enter a whole number from 0 to 2,147,483,647.", "OK")->show();
             return;
         }
         onChoice(stars);

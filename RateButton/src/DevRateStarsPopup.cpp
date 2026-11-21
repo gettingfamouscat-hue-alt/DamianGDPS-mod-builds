@@ -426,7 +426,7 @@ void DevRateStarsPopup::onSendOnly(CCObject *) {
     if (!SessionManager::canUseRateButton()) { Notification::create("No staff permission", NotificationIcon::Error)->show(); return; }
     auto const stars = this->starsToSubmit();
 
-    if (m_selectedStars > 0) {
+    if (m_selectedStars > 0 || stars > 0) {
         // Trailing nonce so GD client / servers don't treat identical !send
         // as a duplicate comment and silently drop re-sends.
         auto const nonce = static_cast<long long>(
@@ -473,7 +473,7 @@ std::string_view DevRateStarsPopup::difficultyCommandName() const {
 
 void DevRateStarsPopup::onSubmit(CCObject *) {
     if (!SessionManager::isElderMod()) { Notification::create("Rating requires Elder Mod or Admin", NotificationIcon::Error)->show(); return; }
-    if (m_selectedStars > 0) {
+    if (m_selectedStars > 0 || this->starsToSubmit() > 0) {
         // Face always from picker. Stars only if the star logo toggle is on.
         GameLevelManager::sharedState()->uploadComment(
             fmt::format(

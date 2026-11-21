@@ -32,7 +32,7 @@ protected:
     // Switch under face → demon / Easy↔Very Easy pickers
     CCMenuItemSpriteExtra *m_switchButton = nullptr;
     int m_selectedStars = 0;
-    int m_customStars = -1; // -1 follows the selected face; 0..999 overrides only the award.
+    int m_customStars = -1; // -1 follows the selected face; 0..INT32_MAX overrides only the award.
     // 0=Easy, 1=Medium, 2=Hard, 3=Insane, 4=Extreme, 5=Impossible (only used at 10 stars)
     int m_demonDiff = 2;
     // 0=Easy, 1=Very Easy (only used at 2 stars)
