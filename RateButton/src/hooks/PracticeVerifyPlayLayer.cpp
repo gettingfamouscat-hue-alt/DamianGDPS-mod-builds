@@ -42,8 +42,10 @@ class $modify(PracticeVerifyPlayLayer, PlayLayer) {
     }
 
     void showNewBest(bool newReward, int orbs, int diamonds, bool demonKey, bool noRetry, bool noTitle) {
+        bool shouldFreeze = Utils::isOnGdps() &&
+            (frozenPercent(this->getCurrentPercent()) || (m_lastAttemptPercent >= 63 && m_lastAttemptPercent < 68));
         PlayLayer::showNewBest(newReward, orbs, diamonds, demonKey, noRetry, noTitle);
-        if (Utils::isOnGdps() && m_lastAttemptPercent >= 63 && m_lastAttemptPercent < 68) {
+        if (shouldFreeze) {
             freezePercentLabels(this);
         }
     }
