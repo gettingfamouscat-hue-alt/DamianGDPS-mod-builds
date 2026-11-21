@@ -26,4 +26,15 @@ namespace PercentDisplay {
             for (auto* child : node->getChildrenExt()) capLabels(child);
         }
     }
+
+    inline void capExactLabels(cocos2d::CCNode* node, cocos2d::CCNode* exclude = nullptr) {
+        if (!node || node == exclude) return;
+        if (auto* label = geode::prelude::typeinfo_cast<cocos2d::CCLabelBMFont*>(node)) {
+            std::string value = label->getString();
+            if (value == "65%" || value == "66%" || value == "67%") label->setString("64%");
+        }
+        if (node->getChildren()) {
+            for (auto* child : node->getChildrenExt()) capExactLabels(child, exclude);
+        }
+    }
 }

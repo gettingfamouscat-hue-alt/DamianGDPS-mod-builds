@@ -12,7 +12,7 @@ class $modify(GdpsPercentPauseLayer, PauseLayer) {
         if (!Utils::isOnGdps()) return;
         auto* play = PlayLayer::get();
         if (play && play->m_level && PercentDisplay::frozen(static_cast<int>(play->m_level->m_normalPercent))) {
-            PercentDisplay::capLabels(this);
+            PercentDisplay::capExactLabels(this);
         }
     }
 };

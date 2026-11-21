@@ -35,7 +35,11 @@ namespace {
 
 class $modify(MyLevelCell, LevelCell) {
     void capProgressLabels(float) {
-        if (Utils::isOnGdps()) PercentDisplay::capLabels(this);
+        if (!Utils::isOnGdps()) return;
+        if (auto* percentage = this->getChildByIDRecursive("percentage-label"))
+            PercentDisplay::capExactLabels(percentage);
+        else
+            PercentDisplay::capExactLabels(this, this->getChildByIDRecursive("level-name"));
     }
 
     struct Fields { CreatorDisplay::State display; };

@@ -154,7 +154,7 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
             return true;
 
         if (m_level && PercentDisplay::frozen(static_cast<int>(m_level->m_normalPercent)))
-            PercentDisplay::capLabels(this);
+            PercentDisplay::capExactLabels(this, this->getChildByIDRecursive("level-name"));
 
         SessionManager::refresh(true);
         this->ensureRateButton();
