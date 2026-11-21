@@ -1,0 +1,32 @@
+name: Build Grandpa Demon for Mac
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v7
+      - name: Fetch upstream Grandpa Demon v1.2.3
+        run: git clone --depth 1 --branch v1.2.3 https://github.com/UltraSodaa/GrandpaDemon.git GrandpaDemon
+      - name: Enable both Mac architectures
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('GrandpaDemon/CMakeLists.txt')
+          text = path.read_text()
+          text = text.replace('set(CMAKE_OSX_ARCHITECTURES "x86_64")', 'set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")')
+          path.write_text(text)
+          PY
+      - uses: geode-sdk/build-geode-mod@main
+        id: build
+        with:
+          path: GrandpaDemon
+          target: MacOS
+          sdk: given
+          use-lto: false
+      - uses: actions/upload-artifact@v7
+        with:
+          name: GrandpaDemon-macOS
+          path: ${{ steps.build.outputs.build-output }}/*.geode
