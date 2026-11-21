@@ -8,7 +8,7 @@
     },
     "id": "m336.rate-button",
     "name": "Rate Button (GDPS only)",
-    "version": "v1.4.4",
+    "version": "v1.4.8",
     "developer": "M336",
     "description": "Rate levels like RobTop!",
     "links": {
@@ -74,3 +74,6 @@
         }
     }
 }
+
+
+
