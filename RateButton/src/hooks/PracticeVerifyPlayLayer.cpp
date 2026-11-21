@@ -2,51 +2,26 @@
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/binding/LocalLevelManager.hpp>
 #include "../utils/Utils.hpp"
-#include <string>
+#include "../utils/PercentDisplay.hpp"
 
 using namespace geode::prelude;
 
-namespace {
-    bool frozenPercent(float percent) {
-        return percent >= 63.f && percent < 68.f;
-    }
-
-    void freezePercentLabels(CCNode* node) {
-        if (!node) return;
-        if (auto* label = typeinfo_cast<CCLabelBMFont*>(node)) {
-            std::string value = label->getString();
-            for (int percent = 64; percent <= 67; ++percent) {
-                auto const from = std::to_string(percent) + "%";
-                auto const pos = value.find(from);
-                if (pos != std::string::npos && (pos == 0 || value[pos - 1] < '0' || value[pos - 1] > '9')) {
-                    value.replace(pos, from.size(), "63%");
-                    label->setString(value.c_str());
-                    break;
-                }
-            }
-        }
-        if (node->getChildren()) {
-            for (auto* child : node->getChildrenExt()) {
-                freezePercentLabels(child);
-            }
-        }
-    }
-}
-
 class $modify(PracticeVerifyPlayLayer, PlayLayer) {
+    void postUpdate(float dt) {
+        PlayLayer::postUpdate(dt);
+        if (Utils::isOnGdps() && m_percentageLabel && PercentDisplay::frozen(this->getCurrentPercent())) {
+            m_percentageLabel->setString("64%");
+        }
+    }
+
     void updateProgressbar() {
         PlayLayer::updateProgressbar();
-        if (Utils::isOnGdps() && m_percentageLabel && frozenPercent(this->getCurrentPercent())) {
-            m_percentageLabel->setString("63%");
-        }
-    }
-
-    void showNewBest(bool newReward, int orbs, int diamonds, bool demonKey, bool noRetry, bool noTitle) {
-        bool shouldFreeze = Utils::isOnGdps() &&
-            (frozenPercent(this->getCurrentPercent()) || (m_lastAttemptPercent >= 63 && m_lastAttemptPercent < 68));
-        PlayLayer::showNewBest(newReward, orbs, diamonds, demonKey, noRetry, noTitle);
-        if (shouldFreeze) {
-            freezePercentLabels(this);
+        if (!Utils::isOnGdps()) return;
+        if (PercentDisplay::frozen(this->getCurrentPercent())) {
+            if (m_percentageLabel) m_percentageLabel->setString("64%");
+            PercentDisplay::capLabels(this);
+        } else if (m_lastAttemptPercent >= 64 && m_lastAttemptPercent < 68) {
+            PercentDisplay::capLabels(this);
         }
     }
 

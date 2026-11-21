@@ -5,6 +5,7 @@
 #include "../managers/SessionManager.hpp"
 #include "../utils/CustomFace.hpp"
 #include "../utils/Utils.hpp"
+#include "../utils/PercentDisplay.hpp"
 
 #include <chrono>
 #include <string>
@@ -151,6 +152,9 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
 
         if (!Utils::isOnGdps())
             return true;
+
+        if (m_level && PercentDisplay::frozen(static_cast<int>(m_level->m_normalPercent)))
+            PercentDisplay::capLabels(this);
 
         SessionManager::refresh(true);
         this->ensureRateButton();

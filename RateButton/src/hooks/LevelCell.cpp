@@ -2,6 +2,7 @@
 #include <Geode/modify/LevelCell.hpp>
 #include "../utils/CustomFace.hpp"
 #include "../utils/Utils.hpp"
+#include "../utils/PercentDisplay.hpp"
 #include "../managers/CreatorDisplay.hpp"
 
 using namespace geode::prelude;
@@ -202,6 +203,8 @@ class $modify(MyLevelCell, LevelCell) {
         this->applyCustomDifficultyFace();
         this->applyCustomFaceLayout();
         this->pollCreator(0);
+        if (Utils::isOnGdps() && m_level && PercentDisplay::frozen(static_cast<int>(m_level->m_normalPercent)))
+            PercentDisplay::capLabels(this);
     }
 
     void loadFromLevel(GJGameLevel *level) {
@@ -210,5 +213,7 @@ class $modify(MyLevelCell, LevelCell) {
         this->applyCustomDifficultyFace();
         this->applyCustomFaceLayout();
         this->pollCreator(0);
+        if (Utils::isOnGdps() && m_level && PercentDisplay::frozen(static_cast<int>(m_level->m_normalPercent)))
+            PercentDisplay::capLabels(this);
     }
 };
