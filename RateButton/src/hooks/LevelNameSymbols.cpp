@@ -22,12 +22,11 @@ namespace {
     }
 
     gd::string allowedLevelNameChars() {
-        gd::string chars;
+        std::string chars;
         for (char c = 32; c <= 126; ++c) {
-            char one[] = {c, '\0'};
-            chars += one;
+            chars.push_back(c);
         }
-        return chars;
+        return gd::string(chars.c_str());
     }
 }
 
