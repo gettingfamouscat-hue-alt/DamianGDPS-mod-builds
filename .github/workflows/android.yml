@@ -12,6 +12,7 @@ on:
       - 'VersusRace/resources/**'
       - 'VersusRace/mod.json'
       - 'VersusRace/CMakeLists.txt'
+      - 'PlatformerSaves/**'
       - '.github/workflows/android.yml'
 permissions:
   contents: read
@@ -22,10 +23,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [RateButton, VersusRace]
+        project: [RateButton, VersusRace, PlatformerSaves]
         target: [Android64, Android32]
     steps:
       - uses: actions/checkout@v7
+      - name: Stage PersistenceAPI dependency
+        if: matrix.project == 'PlatformerSaves'
+        run: |
+          mkdir -p PlatformerSaves/build/geode-deps/sabe.persistenceapi
+          curl -fLsS https://github.com/0x5abe/PersistenceAPI/releases/download/v1.2.0/sabe.persistenceapi.geode -o /tmp/sabe.persistenceapi.geode
+          unzip -q /tmp/sabe.persistenceapi.geode -d PlatformerSaves/build/geode-deps/sabe.persistenceapi
+          echo '{ "required": true }' > PlatformerSaves/build/geode-deps/sabe.persistenceapi/geode-dep-options.json
       - uses: geode-sdk/build-geode-mod@main
         id: build
         with:
