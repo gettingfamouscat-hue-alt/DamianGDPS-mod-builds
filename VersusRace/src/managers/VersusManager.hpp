@@ -32,6 +32,7 @@ public:
     bool inMatch() const { return m_matchID > 0 && m_phase != "idle" && m_phase != "finished"; }
     int matchID() const { return m_matchID; }
     int levelID() const { return m_levelID; }
+    std::string levelDownloadUrl() const;
     VersusSnapshot const& last() const { return m_last; }
 
     void startSearch();

@@ -1,16 +1,17 @@
 #include <Geode/Geode.hpp>
 #include <Geode/binding/GJAccountManager.hpp>
 #include <Geode/binding/GameLevelManager.hpp>
+#include <Geode/binding/GJGameLevel.hpp>
 #include <Geode/binding/PlayLayer.hpp>
 #include <Geode/modify/CreatorLayer.hpp>
+#include <Geode/utils/web.hpp>
 #include "../managers/VersusManager.hpp"
 
-#include <atomic>
 #include <chrono>
 #include <functional>
-#include <memory>
 #include <string>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 using namespace geode::prelude;
@@ -24,48 +25,60 @@ namespace {
         CCDirector::sharedDirector()->replaceScene(CCTransitionFade::create(0.5f, scene));
     }
 
-    void playVersusLevel(int levelID) {
-        auto* glm = GameLevelManager::sharedState();
-        if (!glm)
-            return;
+    GJGameLevel* parseVersusLevel(std::string const& response, int levelID) {
+        auto end = response.find('#');
+        auto fields = response.substr(0, end);
+        std::unordered_map<std::string, std::string> values;
+        size_t start = 0;
+        while (start < fields.size()) {
+            auto separator = fields.find(':', start);
+            if (separator == std::string::npos) break;
+            auto next = fields.find(':', separator + 1);
+            auto key = fields.substr(start, separator - start);
+            auto value = fields.substr(separator + 1,
+                next == std::string::npos ? std::string::npos : next - separator - 1);
+            values.emplace(std::move(key), std::move(value));
+            if (next == std::string::npos) break;
+            start = next + 1;
+        }
+        if (values["1"] != std::to_string(levelID) || values["4"].empty())
+            return nullptr;
 
-        if (auto* saved = glm->getSavedLevel(levelID)) {
-            enterLevel(saved);
+        auto* dict = CCDictionary::create();
+        for (auto const& [key, value] : values)
+            dict->setObject(CCString::create(value.c_str()), key.c_str());
+        auto* level = GJGameLevel::create(dict, true);
+        if (!level || static_cast<int>(level->m_levelID) != levelID || level->m_levelString.empty())
+            return nullptr;
+        return level;
+    }
+
+    void playVersusLevel(int levelID) {
+        auto url = VersusManager::get().levelDownloadUrl();
+        if (url == "/downloadGJLevel22.php") {
+            Notification::create("Set the GDPS URL in Versus settings", NotificationIcon::Error)->show();
+            VersusManager::get().leaveMatch();
             return;
         }
-
-        glm->downloadLevel(levelID, false, 0);
         Notification::create("Downloading versus level…", NotificationIcon::Info)->show();
-
-        // Poll until the level is cached (onDownloadLevelCompleted is inline / unhookable)
-        auto finished = std::make_shared<std::atomic_bool>(false);
-        std::thread([levelID, finished]() {
-            for (int i = 0; i < 40; i++) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(500));
-                if (finished->load())
+        std::thread([url = std::move(url), levelID]() {
+            web::WebRequest req;
+            req.header("Content-Type", "application/x-www-form-urlencoded");
+            req.bodyString(fmt::format("levelID={}&gameVersion=22&binaryVersion=38", levelID));
+            req.timeout(std::chrono::seconds(20));
+            auto res = req.postSync(url);
+            auto body = res.ok() ? res.string().unwrapOr("") : std::string{};
+            Loader::get()->queueInMainThread([levelID, body = std::move(body)]() {
+                if (!VersusManager::get().inMatch() || VersusManager::get().levelID() != levelID)
                     return;
-                Loader::get()->queueInMainThread([levelID, finished]() {
-                    if (finished->load())
-                        return;
-                    if (!VersusManager::get().inMatch()) {
-                        finished->store(true);
-                        return;
-                    }
-                    auto* glm = GameLevelManager::sharedState();
-                    if (!glm)
-                        return;
-                    if (auto* lvl = glm->getSavedLevel(levelID)) {
-                        finished->store(true);
-                        enterLevel(lvl);
-                    }
-                });
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(600));
-            if (!finished->load()) {
-                Loader::get()->queueInMainThread([]() {
-                    Notification::create("Versus download timed out", NotificationIcon::Error)->show();
-                });
-            }
+                if (auto* level = parseVersusLevel(body, levelID)) {
+                    enterLevel(level);
+                } else {
+                    log::warn("Versus: GDPS level {} download failed", levelID);
+                    Notification::create("Versus level could not load", NotificationIcon::Error)->show();
+                    VersusManager::get().leaveMatch();
+                }
+            });
         }).detach();
     }
 

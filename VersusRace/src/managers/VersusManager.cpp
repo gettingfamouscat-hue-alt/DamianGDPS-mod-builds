@@ -43,6 +43,10 @@ std::string VersusManager::endpoint(char const* path) const {
     return fmt::format("{}/versus/{}", this->baseUrl(), path);
 }
 
+std::string VersusManager::levelDownloadUrl() const {
+    return fmt::format("{}/downloadGJLevel22.php", this->baseUrl());
+}
+
 VersusSnapshot VersusManager::parseJson(matjson::Value const& v) const {
     VersusSnapshot s;
     s.ok = v.contains("ok") ? v["ok"].asBool().unwrapOr(true) : true;
