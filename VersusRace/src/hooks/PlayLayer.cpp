@@ -57,7 +57,7 @@ class $modify(VersusPlayLayer, PlayLayer) {
             pct->setAnchorPoint({side==0?0.f:1.f,.5f});
             pct->setPosition({edge+direction*55.f,-17.f});hud->addChild(pct);m_fields->percents[side]=pct;
             auto* heart=CCSprite::create("versus-heart.png"_spr);
-            if(heart){heart->setScale(.22f);heart->setPosition({edge+direction*110.f,-17.f});hud->addChild(heart);}
+            if(heart){heart->setScale(.28f);heart->setPosition({edge+direction*110.f,-17.f});hud->addChild(heart);}
             m_fields->hearts[side]=heart;
             auto* lifeCount=CCLabelBMFont::create("3","bigFont.fnt");lifeCount->setScale(.4f);
             lifeCount->setPosition({edge+direction*138.f,-17.f});hud->addChild(lifeCount);m_fields->lifeCounts[side]=lifeCount;
@@ -99,11 +99,29 @@ class $modify(VersusPlayLayer, PlayLayer) {
                 title->limitLabelWidth(94.f,.32f,.18f);
             }
             float percent=std::clamp(side==0?snap.myPercent:snap.oppPercent,0.f,100.f);
-            if(auto* label=m_fields->percents[side])label->setString(fmt::format("{:.0f}%",percent).c_str());
+            auto* percentLabel=m_fields->percents[side];
+            if(percentLabel)percentLabel->setString(fmt::format("{:.0f}%",percent).c_str());
             if(auto* bar=m_fields->bars[side])bar->setContentSize({std::max(1.f,(CCDirector::sharedDirector()->getWinSize().width/2.f-115.f)*percent/100.f),5.f});
             int remaining=std::clamp(side==0?snap.myLives:snap.oppLives,0,3);
-            if(auto* heart=m_fields->hearts[side])heart->setVisible(remaining>0);
-            if(auto* count=m_fields->lifeCounts[side])count->setString(std::to_string(remaining).c_str());
+            auto* heart=m_fields->hearts[side];
+            auto* count=m_fields->lifeCounts[side];
+            if(heart)heart->setVisible(remaining>0);
+            if(count)count->setString(std::to_string(remaining).c_str());
+            // Keep the heart and life count next to the actual percent text on either side.
+            float edge=side==0?-CCDirector::sharedDirector()->getWinSize().width/2.f
+                              :CCDirector::sharedDirector()->getWinSize().width/2.f;
+            float direction=side==0?1.f:-1.f;
+            float offset=55.f;
+            if(percentLabel)offset+=percentLabel->getContentSize().width*percentLabel->getScaleX();
+            if(heart) {
+                float heartWidth=heart->getContentSize().width*heart->getScaleX();
+                heart->setPosition({edge+direction*(offset+4.f+heartWidth/2.f),-17.f});
+                offset+=4.f+heartWidth;
+            }
+            if(count) {
+                float countWidth=count->getContentSize().width*count->getScaleX();
+                count->setPosition({edge+direction*(offset+3.f+countWidth/2.f),-17.f});
+            }
         }
     }
 
