@@ -14,6 +14,7 @@ jobs:
         run: |
           python3 - <<'PY'
           import json
+          import re
           from pathlib import Path
           path = Path('GrandpaDemon/CMakeLists.txt')
           text = path.read_text()
@@ -25,6 +26,13 @@ jobs:
           metadata['version'] = 'v1.2.3'
           metadata['gd'] = {platform: '2.2081' for platform in metadata['gd']}
           path.write_text(json.dumps(metadata, indent=2))
+          for path in Path('GrandpaDemon/src').rglob('*'):
+              if path.suffix not in ('.cpp', '.h'):
+                  continue
+              source = path.read_text()
+              source = re.sub(r'CCARRAY_FOREACH\(([^,]+),\s*(\w+)\)',
+                  r'for (auto* \2 : CCArrayExt<CCObject*>(\1))', source)
+              path.write_text(source)
           PY
       - uses: geode-sdk/build-geode-mod@main
         id: build
