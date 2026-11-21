@@ -18,6 +18,8 @@ namespace CustomFace {
     inline constexpr char const *ID_VERY_EASY_LABEL = "rb-very-easy-face-label";
     inline constexpr char const *ID_VERY_EASY_LABEL_BOT = "rb-very-easy-face-label-bot";
     inline constexpr char const *ID_IMPOSSIBLE_LABEL = "rb-impossible-face-label";
+    inline constexpr char const *ID_GRANDPA = "rb-grandpa-face";
+    inline constexpr char const *ID_GRANDPA_LABEL = "rb-grandpa-face-label";
     // Recreated featured/epic/legendary/mythic coin — stock fire lives on the
     // host GJDifficultySprite we hide, so we draw it ourselves behind the face.
     inline constexpr char const *ID_FEATURE_FIRE = "rb-feature-fire";
@@ -92,6 +94,8 @@ namespace CustomFace {
         clearId(parent, ID_VERY_EASY_LABEL);
         clearId(parent, ID_VERY_EASY_LABEL_BOT);
         clearId(parent, ID_IMPOSSIBLE_LABEL);
+        clearId(parent, ID_GRANDPA);
+        clearId(parent, ID_GRANDPA_LABEL);
         clearId(parent, ID_FEATURE_FIRE);
         if (hostToRestore)
             hostToRestore->setVisible(true);
@@ -257,7 +261,8 @@ namespace CustomFace {
         char const *nodeId,
         char const *labelId,
         char const *caption = nullptr,
-        GJGameLevel *level = nullptr
+        GJGameLevel *level = nullptr,
+        bool externalFrame = false
     ) {
         if (!host || !host->getParent())
             return nullptr;
@@ -265,7 +270,9 @@ namespace CustomFace {
         auto *parent = host->getParent();
         clearOverlays(parent, host);
 
-        auto *face = CCSprite::create(sprName);
+        auto *face = externalFrame
+            ? CCSprite::createWithSpriteFrameName(sprName)
+            : CCSprite::create(sprName);
         if (!face || !face->getTexture()) {
             log::warn("Rate Button: failed to load custom face {}", sprName);
             return nullptr;
@@ -302,6 +309,16 @@ namespace CustomFace {
         // detection is flaky — faces must still show when the binary loads.
 
         auto *parent = host->getParent();
+
+        if (int const index = Utils::grandpaIndex(level); index >= 0) {
+            if (Loader::get()->isModLoaded("ultrasoda.grandpa_demon_revived")
+                && CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(Utils::grandpaFrames[index])) {
+                applyOverlay(host, Utils::grandpaFrames[index], ID_GRANDPA,
+                    ID_GRANDPA_LABEL, Utils::grandpaLabels[index], level, true);
+                setStarRowNudge(parent, false);
+                return true;
+            }
+        }
 
         if (Utils::isImpossibleDemonLevel(level)) {
             applyOverlay(

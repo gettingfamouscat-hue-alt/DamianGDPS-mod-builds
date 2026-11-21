@@ -22,14 +22,44 @@ namespace Utils {
     */
     constexpr int VERY_EASY_DIFF_FLAG = 1;
     constexpr int EASY_STARS = 2; // Easy family in the star picker
+    constexpr int GRANDPA_FIRST_STARS = 11;
+    constexpr int GRANDPA_LAST_STARS = 16;
+    constexpr int GRANDPA_FIRST_DIFF = 8; // GDPS starDemonDiff, after legacy 7
+
+    inline constexpr char const* grandpaLabels[] = {
+        "Supreme Demon", "Ultimate Demon", "Legendary Demon",
+        "Mythical Demon", "Silent Demon", "Grandpa Demon"
+    };
+
+    inline constexpr char const* grandpaCommands[] = {
+        "supreme-demon", "ultimate-demon", "legendary-demon",
+        "mythical-demon", "silent-demon", "grandpa-demon"
+    };
+
+    inline constexpr char const* grandpaFrames[] = {
+        "ultrasoda.grandpa_demon_revived/GrD_demon0.png",
+        "ultrasoda.grandpa_demon_revived/GrD_demon1.png",
+        "ultrasoda.grandpa_demon_revived/GrD_demon2.png",
+        "ultrasoda.grandpa_demon_revived/GrD_demon3.png",
+        "ultrasoda.grandpa_demon_revived/GrD_demon4.png",
+        "ultrasoda.grandpa_demon_revived/GrD_demon5.png"
+    };
+
+    inline int grandpaIndex(GJGameLevel* level) {
+        if (!level || !level->m_demon) return -1;
+        int const index = static_cast<int>(level->m_demonDifficulty) - GRANDPA_FIRST_DIFF;
+        return index >= 0 && index < 6 ? index : -1;
+    }
 
     constexpr std::string_view getLevelDifficulty(int stars) {
         constexpr std::string_view difficulties[] = {
             "na", "auto", "easy", "normal", "hard", "hard",
-            "harder", "harder", "insane", "insane", "demon"
+            "harder", "harder", "insane", "insane", "demon",
+            "supreme-demon", "ultimate-demon", "legendary-demon",
+            "mythical-demon", "silent-demon", "grandpa-demon"
         };
 
-        return (stars >= 0 && stars <= 10) ? difficulties[stars] : "na";
+        return (stars >= 0 && stars <= GRANDPA_LAST_STARS) ? difficulties[stars] : "na";
     }
 
     // 0=Easy, 1=Medium, 2=Hard, 3=Insane, 4=Extreme, 5=Impossible
@@ -120,6 +150,8 @@ return false;
         if (level->m_autoLevel)
             return "Auto";
         if (level->m_demon) {
+            if (int const index = grandpaIndex(level); index >= 0)
+                return grandpaLabels[index];
             switch (static_cast<int>(level->m_demonDifficulty)) {
                 case 3: return "Easy Demon";
                 case 4: return "Medium Demon";

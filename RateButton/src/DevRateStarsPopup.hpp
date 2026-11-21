@@ -23,6 +23,7 @@ protected:
     CCSprite *m_difficultyFace = nullptr;
     CCLabelBMFont *m_starsLabel = nullptr;
     CCLabelBMFont *m_awardLabel = nullptr;
+    CCLabelBMFont *m_grandpaLabel = nullptr;
     CCMenuItemSpriteExtra *m_decreaseStarsButton = nullptr;
     CCMenuItemSpriteExtra *m_increaseStarsButton = nullptr;
     // Star award toggle (logo). On = submit selected stars; Off = 0 stars (face/fire/coins still apply).

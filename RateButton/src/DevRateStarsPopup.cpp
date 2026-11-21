@@ -152,6 +152,11 @@ bool DevRateStarsPopup::init(int levelId) {
     m_switchButton->setID("diff-switch-button"_spr);
     m_switchButton->setVisible(false);
     m_buttonMenu->addChildAtPosition(m_switchButton, Anchor::Right, { -85.f, -48.f });
+    m_grandpaLabel = CCLabelBMFont::create("", "bigFont.fnt");
+    m_grandpaLabel->setScale(.32f);
+    m_grandpaLabel->setVisible(false);
+    m_grandpaLabel->setID("grandpa-demon-name"_spr);
+    m_buttonMenu->addChildAtPosition(m_grandpaLabel, Anchor::Right, { -85.f, -48.f });
 
     /*
         DAILY / WEEKLY — Elder only
@@ -278,6 +283,15 @@ void DevRateStarsPopup::updateSwitchVisibility() {
         return;
     auto const show = (m_selectedStars == 10) || (m_selectedStars == Utils::EASY_STARS);
     m_switchButton->setVisible(show);
+    if (m_grandpaLabel) {
+        bool const extra = m_selectedStars >= Utils::GRANDPA_FIRST_STARS
+            && m_selectedStars <= Utils::GRANDPA_LAST_STARS;
+        m_grandpaLabel->setVisible(extra);
+        if (extra) {
+            m_grandpaLabel->setString(Utils::grandpaLabels[m_selectedStars - Utils::GRANDPA_FIRST_STARS]);
+            m_grandpaLabel->limitLabelWidth(95.f, .32f, .18f);
+        }
+    }
 }
 
 void DevRateStarsPopup::onStarsAwardToggle(CCObject *) {
@@ -325,7 +339,7 @@ void DevRateStarsPopup::onDecrease(CCObject *) {
 }
 
 void DevRateStarsPopup::onIncrease(CCObject *) {
-    if (m_selectedStars >= 10)
+    if (m_selectedStars >= Utils::GRANDPA_LAST_STARS)
         return;
 
     m_selectedStars++;
@@ -464,6 +478,9 @@ void DevRateStarsPopup::onCancel(CCObject *) {
 }
 
 std::string_view DevRateStarsPopup::difficultyCommandName() const {
+    if (m_selectedStars >= Utils::GRANDPA_FIRST_STARS
+        && m_selectedStars <= Utils::GRANDPA_LAST_STARS)
+        return Utils::grandpaCommands[m_selectedStars - Utils::GRANDPA_FIRST_STARS];
     if (m_selectedStars == 10)
         return Utils::getDemonDifficultyName(m_demonDiff);
     if (m_selectedStars == Utils::EASY_STARS && m_easyVariant == 1)
@@ -531,6 +548,20 @@ void DevRateStarsPopup::updateDifficultyVisuals() {
     auto *face = static_cast<CCSprite *>(m_difficultyFaceButton->getNormalImage());
     if (!face)
         return;
+
+    if (m_selectedStars >= Utils::GRANDPA_FIRST_STARS
+        && m_selectedStars <= Utils::GRANDPA_LAST_STARS) {
+        int const index = m_selectedStars - Utils::GRANDPA_FIRST_STARS;
+        if (auto* frame = spriteCache->spriteFrameByName(Utils::grandpaFrames[index])) {
+            face->setDisplayFrame(frame);
+            face->setScale(1.25f);
+            return;
+        }
+        // The extra demon art is supplied by the Grandpa Demon mod.
+        face->setDisplayFrame(spriteCache->spriteFrameByName("difficulty_10_btn_001.png"));
+        face->setScale(1.25f);
+        return;
+    }
 
     if (m_selectedStars == 10 && Utils::isCustomDemonFace(m_demonDiff)) {
         if (this->applyCustomFaceTexture(face, "impossible_demon.png"_spr))
