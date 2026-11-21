@@ -57,7 +57,7 @@ class $modify(VersusPlayLayer, PlayLayer) {
             pct->setAnchorPoint({side==0?0.f:1.f,.5f});
             pct->setPosition({edge+direction*55.f,-17.f});hud->addChild(pct);m_fields->percents[side]=pct;
             auto* heart=CCSprite::create("versus-heart.png"_spr);
-            if(heart){heart->setScale(.28f);heart->setPosition({edge+direction*110.f,-17.f});hud->addChild(heart);}
+            if(heart){heart->setScale(.31f);heart->setPosition({edge+direction*110.f,-17.f});hud->addChild(heart);}
             m_fields->hearts[side]=heart;
             auto* lifeCount=CCLabelBMFont::create("3","bigFont.fnt");lifeCount->setScale(.4f);
             lifeCount->setPosition({edge+direction*138.f,-17.f});hud->addChild(lifeCount);m_fields->lifeCounts[side]=lifeCount;
