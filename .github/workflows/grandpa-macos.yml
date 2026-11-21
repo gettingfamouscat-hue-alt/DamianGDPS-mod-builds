@@ -34,6 +34,7 @@ jobs:
                   r'for (auto* \2 : CCArrayExt<CCObject*>(\1))', source)
               path.write_text(source)
           PY
+          cp .github/patches/Grandpa-main-v5.cpp GrandpaDemon/src/main.cpp
       - uses: geode-sdk/build-geode-mod@main
         id: build
         with:
