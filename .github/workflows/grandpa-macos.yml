@@ -13,11 +13,16 @@ jobs:
       - name: Enable both Mac architectures
         run: |
           python3 - <<'PY'
+          import json
           from pathlib import Path
           path = Path('GrandpaDemon/CMakeLists.txt')
           text = path.read_text()
           text = text.replace('set(CMAKE_OSX_ARCHITECTURES "x86_64")', 'set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")')
           path.write_text(text)
+          path = Path('GrandpaDemon/mod.json')
+          metadata = json.loads(path.read_text())
+          metadata['geode'] = '5.10.1'
+          path.write_text(json.dumps(metadata, indent=2))
           PY
       - uses: geode-sdk/build-geode-mod@main
         id: build
