@@ -1,8 +1,32 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/EditorUI.hpp>
+#include <Geode/modify/GameObject.hpp>
 #include <alphalaneous.editortab_api/include/EditorTabAPI.hpp>
 
 using namespace geode::prelude;
+
+class $modify(SeamlessPlankFill, GameObject) {
+    static GameObject* createWithKey(int key) {
+        auto* object = GameObject::createWithKey(key);
+        if (!object || key != 1903 || !object->m_colorSprite) return object;
+
+        // The stock color layer is 29 units wide inside a 30-unit outline.
+        // Use a full-bleed texture so neighboring slabs have no clear strip.
+        auto* fill = object->m_colorSprite;
+        auto oldSize = fill->getContentSize();
+        float oldScaleX = fill->getScaleX();
+        float oldScaleY = fill->getScaleY();
+        auto* texture = CCTextureCache::sharedTextureCache()->addImage("seamless-plank-fill.png"_spr, false);
+        if (!texture) return object;
+        auto textureSize = texture->getContentSize();
+        if (textureSize.width <= 0.f || textureSize.height <= 0.f) return object;
+        fill->setTexture(texture);
+        fill->setTextureRect({0.f, 0.f, textureSize.width, textureSize.height});
+        fill->setScaleX(oldScaleX * (oldSize.width * 30.f / 29.f) / textureSize.width);
+        fill->setScaleY(oldScaleY * oldSize.height / textureSize.height);
+        return object;
+    }
+};
 
 class $modify(ClassicHalfBlockEditor, EditorUI) {
     bool init(LevelEditorLayer* layer) {

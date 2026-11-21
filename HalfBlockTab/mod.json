@@ -7,9 +7,12 @@
     },
     "id": "damian.half-block-tab",
     "name": "Classic Half Blocks",
-    "version": "v1.0.0",
+    "version": "v1.0.1",
     "developer": "Damian GDPS",
-    "description": "Restores a dedicated half-block editor tab with modern and original slabs.",
+    "description": "Restores classic half blocks and closes the visible fill seams.",
+    "resources": {
+        "files": ["resources/seamless-plank-fill.png"]
+    },
     "dependencies": {
         "alphalaneous.editortab_api": ">=v2.1.13"
     },
