@@ -1,0 +1,32 @@
+name: Build corrected Mac Platformer Saves
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'PlatformerSaves/**'
+      - '.github/workflows/platformer-macos.yml'
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v7
+      - name: Stage PersistenceAPI 1.2.0
+        run: |
+          mkdir -p PlatformerSaves/build/geode-deps/sabe.persistenceapi
+          curl -fLsS https://github.com/0x5abe/PersistenceAPI/releases/download/v1.2.0/sabe.persistenceapi.geode -o /tmp/sabe.persistenceapi.geode
+          unzip -q /tmp/sabe.persistenceapi.geode -d PlatformerSaves/build/geode-deps/sabe.persistenceapi
+          echo '{ "required": true }' > PlatformerSaves/build/geode-deps/sabe.persistenceapi/geode-dep-options.json
+      - uses: geode-sdk/build-geode-mod@main
+        id: build
+        with:
+          path: PlatformerSaves
+          target: MacOS
+          sdk: given
+          use-lto: false
+      - uses: actions/upload-artifact@v7
+        with:
+          name: PlatformerSaves-macOS-candidate
+          path: ${{ steps.build.outputs.build-output }}/*.geode
