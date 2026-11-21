@@ -1,0 +1,17 @@
+{
+    "geode": "5.10.1",
+    "gd": {
+        "win": "2.2081",
+        "mac": "2.2081",
+        "android": "2.2081"
+    },
+    "id": "damian.half-block-tab",
+    "name": "Classic Half Blocks",
+    "version": "v1.0.0",
+    "developer": "Damian GDPS",
+    "description": "Restores a dedicated half-block editor tab with modern and original slabs.",
+    "dependencies": {
+        "alphalaneous.editortab_api": ">=v2.1.13"
+    },
+    "tags": ["editor", "enhancement", "interface"]
+}

@@ -13,6 +13,7 @@ on:
       - 'VersusRace/mod.json'
       - 'VersusRace/CMakeLists.txt'
       - 'PlatformerSaves/**'
+      - 'HalfBlockTab/**'
       - '.github/workflows/android.yml'
 permissions:
   contents: read
@@ -23,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [RateButton, VersusRace, PlatformerSaves]
+        project: [RateButton, VersusRace, PlatformerSaves, HalfBlockTab]
         target: [Android64, Android32]
     steps:
       - uses: actions/checkout@v7
