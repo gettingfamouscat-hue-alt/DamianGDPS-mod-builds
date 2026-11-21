@@ -22,6 +22,8 @@ jobs:
           path = Path('GrandpaDemon/mod.json')
           metadata = json.loads(path.read_text())
           metadata['geode'] = '5.10.1'
+          metadata['version'] = 'v1.2.3'
+          metadata['gd'] = {platform: '2.2081' for platform in metadata['gd']}
           path.write_text(json.dumps(metadata, indent=2))
           PY
       - uses: geode-sdk/build-geode-mod@main
