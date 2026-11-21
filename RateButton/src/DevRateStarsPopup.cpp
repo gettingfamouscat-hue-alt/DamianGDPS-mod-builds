@@ -1,4 +1,5 @@
 #include "DevRateStarsPopup.hpp"
+#include "CustomStarsPopup.hpp"
 #include "DiffPickPopup.hpp"
 #include "managers/SessionManager.hpp"
 #include "managers/SettingsManager.hpp"
@@ -108,6 +109,20 @@ bool DevRateStarsPopup::init(int levelId) {
     m_increaseStarsButton->setRotation(90.f);
     m_increaseStarsButton->setID("increase-stars-button"_spr);
     m_buttonMenu->addChildAtPosition(m_increaseStarsButton, Anchor::Left, { 175.f, 0.f });
+
+    // Award amount can differ from the face chosen with the arrows.
+    m_awardLabel = CCLabelBMFont::create("Given: 0", "bigFont.fnt");
+    m_awardLabel->setScale(.35f);
+    m_awardLabel->setID("stars-given-label"_spr);
+    m_buttonMenu->addChildAtPosition(m_awardLabel, Anchor::Left, { 130.f, -27.f });
+    if (elder) {
+        auto* customButton = CCMenuItemSpriteExtra::create(
+            ButtonSprite::create("Set Stars"), this,
+            menu_selector(DevRateStarsPopup::onCustomStars));
+        customButton->setScale(.53f);
+        customButton->setID("custom-stars-button"_spr);
+        m_buttonMenu->addChildAtPosition(customButton, Anchor::Left, { 130.f, -49.f });
+    }
 
     /*
         DIFFICULTY FACE LOGIC
@@ -225,7 +240,21 @@ bool DevRateStarsPopup::init(int levelId) {
 }
 
 int DevRateStarsPopup::starsToSubmit() const {
-    return m_awardStars ? m_selectedStars : 0;
+    return m_awardStars ? (m_customStars >= 0 ? m_customStars : m_selectedStars) : 0;
+}
+
+void DevRateStarsPopup::updateAwardLabel() {
+    if (m_awardLabel)
+        m_awardLabel->setString(fmt::format("Given: {}", starsToSubmit()).c_str());
+}
+
+void DevRateStarsPopup::onCustomStars(CCObject *) {
+    if (!SessionManager::isElderMod()) return;
+    int current = m_customStars >= 0 ? m_customStars : m_selectedStars;
+    if (auto* popup = CustomStarsPopup::create(current, [this](int stars) {
+            m_customStars = stars;
+            updateAwardLabel();
+        })) popup->show();
 }
 
 void DevRateStarsPopup::updateStarsToggleVisuals() {
@@ -472,6 +501,7 @@ bool DevRateStarsPopup::applyCustomFaceTexture(CCSprite *face, char const *sprNa
 
 void DevRateStarsPopup::updateDifficultyVisuals() {
     auto *spriteCache = CCSpriteFrameCache::sharedSpriteFrameCache();
+    updateAwardLabel();
 
     static constexpr std::array difficultyFrames {
         "difficulty_00_btn_001.png", // N/A

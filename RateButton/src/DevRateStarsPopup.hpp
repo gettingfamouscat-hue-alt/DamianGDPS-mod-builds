@@ -22,6 +22,7 @@ protected:
     CCMenuItemSpriteExtra *m_difficultyFaceButton = nullptr;
     CCSprite *m_difficultyFace = nullptr;
     CCLabelBMFont *m_starsLabel = nullptr;
+    CCLabelBMFont *m_awardLabel = nullptr;
     CCMenuItemSpriteExtra *m_decreaseStarsButton = nullptr;
     CCMenuItemSpriteExtra *m_increaseStarsButton = nullptr;
     // Star award toggle (logo). On = submit selected stars; Off = 0 stars (face/fire/coins still apply).
@@ -31,6 +32,7 @@ protected:
     // Switch under face → demon / Easy↔Very Easy pickers
     CCMenuItemSpriteExtra *m_switchButton = nullptr;
     int m_selectedStars = 0;
+    int m_customStars = -1; // -1 follows the selected face; 0..999 overrides only the award.
     // 0=Easy, 1=Medium, 2=Hard, 3=Insane, 4=Extreme, 5=Impossible (only used at 10 stars)
     int m_demonDiff = 2;
     // 0=Easy, 1=Very Easy (only used at 2 stars)
@@ -51,10 +53,12 @@ protected:
     void onSubmit(CCObject *);
     void onDifficultyFace(CCObject *);
     void onStarsAwardToggle(CCObject *);
+    void onCustomStars(CCObject *);
     void onSwitch(CCObject *);
 
     void updateDifficultyVisuals();
     void updateStarsToggleVisuals();
+    void updateAwardLabel();
     void updateSwitchVisibility();
     bool applyCustomFaceTexture(CCSprite *face, char const *sprName);
     int starsToSubmit() const;
