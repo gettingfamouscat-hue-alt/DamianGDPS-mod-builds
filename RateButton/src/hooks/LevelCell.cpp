@@ -34,10 +34,14 @@ namespace {
 }
 
 class $modify(MyLevelCell, LevelCell) {
+    void capProgressLabels(float) {
+        if (Utils::isOnGdps()) PercentDisplay::capLabels(this);
+    }
+
     struct Fields { CreatorDisplay::State display; };
     void pollCreator(float) { if(m_level) CreatorDisplay::apply(this,m_level->m_levelID,m_fields->display); }
     void onExit() { this->unschedule(schedule_selector(MyLevelCell::pollCreator)); LevelCell::onExit(); }
-    void onEnter() { LevelCell::onEnter(); this->schedule(schedule_selector(MyLevelCell::pollCreator),.5f); }
+    void onEnter() { LevelCell::onEnter(); this->schedule(schedule_selector(MyLevelCell::pollCreator),.5f); this->capProgressLabels(0.f); }
 
     void applyCustomDifficultyFace() {
         if (!m_level)
@@ -203,8 +207,8 @@ class $modify(MyLevelCell, LevelCell) {
         this->applyCustomDifficultyFace();
         this->applyCustomFaceLayout();
         this->pollCreator(0);
-        if (Utils::isOnGdps() && m_level && PercentDisplay::frozen(static_cast<int>(m_level->m_normalPercent)))
-            PercentDisplay::capLabels(this);
+        this->capProgressLabels(0.f);
+        this->scheduleOnce(schedule_selector(MyLevelCell::capProgressLabels), 0.f);
     }
 
     void loadFromLevel(GJGameLevel *level) {
@@ -213,7 +217,7 @@ class $modify(MyLevelCell, LevelCell) {
         this->applyCustomDifficultyFace();
         this->applyCustomFaceLayout();
         this->pollCreator(0);
-        if (Utils::isOnGdps() && m_level && PercentDisplay::frozen(static_cast<int>(m_level->m_normalPercent)))
-            PercentDisplay::capLabels(this);
+        this->capProgressLabels(0.f);
+        this->scheduleOnce(schedule_selector(MyLevelCell::capProgressLabels), 0.f);
     }
 };
