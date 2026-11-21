@@ -1,0 +1,39 @@
+name: Build Android GDPS mods
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'RateButton/src/**'
+      - 'RateButton/resources/**'
+      - 'RateButton/mod.json'
+      - 'RateButton/CMakeLists.txt'
+      - 'VersusRace/src/**'
+      - 'VersusRace/resources/**'
+      - 'VersusRace/mod.json'
+      - 'VersusRace/CMakeLists.txt'
+      - '.github/workflows/android.yml'
+permissions:
+  contents: read
+jobs:
+  build:
+    name: ${{ matrix.project }} - ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [RateButton, VersusRace]
+        target: [Android64, Android32]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: geode-sdk/build-geode-mod@main
+        id: build
+        with:
+          path: ${{ matrix.project }}
+          target: ${{ matrix.target }}
+          sdk: given
+          use-lto: false
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.project }}-${{ matrix.target }}
+          path: ${{ steps.build.outputs.build-output }}/*.geode
