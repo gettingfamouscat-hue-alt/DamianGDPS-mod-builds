@@ -79,6 +79,12 @@ class $modify(OwnerGoldCoinEditor, EditorUI) {
         bool specialCaptured = false;
     };
 
+    bool canUseCoinTab() const {
+        // Official GD gets only the native object palette. The custom GDPS
+        // palette remains restricted to its owner account.
+        return !GoldenCoin::isOnGdps() || GoldenCoin::accountID() == 1;
+    }
+
     bool selectedOwnerCoin() const {
         return GoldenCoin::isOnGdps() && GoldenCoin::accountID() == 1
             && m_selectedObject && m_selectedObject->m_objectID == 142;
@@ -122,14 +128,12 @@ class $modify(OwnerGoldCoinEditor, EditorUI) {
 
     bool init(LevelEditorLayer* layer) {
         if (!EditorUI::init(layer)) return false;
-        // Hide the palette from every other account. The upload endpoint also
-        // checks the authenticated account, so a modified client cannot add it.
-        if (!GoldenCoin::isOnGdps() || GoldenCoin::accountID() != 1) return true;
+        if (!canUseCoinTab()) return true;
 
         alpha::editor_tabs::addTab("owner-gold-coin"_spr, alpha::editor_tabs::BUILD,
             [this] {
                 auto* items = CCArray::create();
-                if (GoldenCoin::accountID() == 1 && GoldenCoin::isOnGdps()) {
+                if (canUseCoinTab()) {
                     if (auto* button = this->getCreateBtn(142, 4)) items->addObject(button);
                 }
                 return EditButtonBar::create(items, {}, -1, false,

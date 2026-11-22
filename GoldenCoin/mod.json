@@ -7,15 +7,15 @@
     },
     "id": "damian.goldencoin",
     "name": "Golden Coin",
-    "version": "v1.0.1",
+    "version": "v1.0.2",
     "developer": "damian",
-    "description": "Owner-only golden secret coins for Damian GDPS, with collection effects and progress indicators.",
+    "description": "Golden coin editor tab for official GD; owner-only coins, effects and progress indicators on Damian GDPS.",
     "dependencies": {
         "alphalaneous.editortab_api": ">=v2.1.13",
         "geode.node-ids": ">=v1.23.3",
         "km7dev.server_api": {
             "version": ">=v4.0.0",
-            "required": false
+            "required": true
         }
     },
     "settings": {

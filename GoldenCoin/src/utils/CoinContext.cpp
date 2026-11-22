@@ -30,6 +30,7 @@ std::string GoldenCoin::serverBaseUrl() {
 bool GoldenCoin::isOnGdps() {
     if (Loader::get()->isModLoaded("km7dev.server_api")) {
         auto url = ServerAPIEvents::getCurrentServer().url;
+        if (url.empty() || url == "NONE_REGISTERED") url = ServerAPIEvents::getBaseUrl();
         if (!url.empty() && url != "NONE_REGISTERED") {
             auto scheme = url.find("://");
             auto begin = scheme == std::string::npos ? 0 : scheme + 3;
