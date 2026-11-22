@@ -138,6 +138,12 @@ public:
             int index = oldIndex ? oldIndex->getValue() + 1 : 1;
             play->setUserObject("owner-gold-count"_spr, CCInteger::create(index));
             object->setUserObject("owner-gold-index"_spr, CCInteger::create(index));
+            if (auto* coin = typeinfo_cast<EffectGameObject*>(object)) {
+                if (coin->m_secretCoinID == 0 && index >= 1 && index <= 3) {
+                    object->setUserObject("owner-gold-no-reward"_spr, CCBool::create(true));
+                    coin->m_secretCoinID = index;
+                }
+            }
         }
         object->setUserObject("owner-gold-object"_spr, CCBool::create(true));
         hooked->m_fields->originalID = object->m_objectID;

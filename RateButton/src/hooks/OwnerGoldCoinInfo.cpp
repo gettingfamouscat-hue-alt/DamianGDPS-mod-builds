@@ -132,7 +132,7 @@ class $modify(OwnerGoldCoinCell, LevelCell) {
         if (auto* face = getChildByIDRecursive("difficulty-sprite")) {
             auto size = face->getContentSize();
             auto center = convertToNodeSpace(face->convertToWorldSpace({size.width / 2.f, 0.f}));
-            m_fields->row->setPosition(center + CCPoint{0.f, -19.f});
+            m_fields->row->setPosition(center + CCPoint{0.f, -8.f});
         }
         for (int i = 1; i <= count; ++i) {
             auto* coin = static_cast<CCSprite*>(m_fields->row->getChildByTag(i));
@@ -142,8 +142,7 @@ class $modify(OwnerGoldCoinCell, LevelCell) {
 };
 class $modify(OwnerGoldCoinInfo, LevelInfoLayer) {
     struct Fields { std::string key; bool drawn = false; };
-    void onEnter() {
-        LevelInfoLayer::onEnter();
+    void refreshGoldProgress() {
         if (!m_level || !Utils::isOnGdps()) return;
         for (int index = 1; index <= 3; ++index) {
             auto id = fmt::format("owner-gold-icon-{}", index);
@@ -159,12 +158,11 @@ class $modify(OwnerGoldCoinInfo, LevelInfoLayer) {
         return true;
     }
     void pollGoldCoins(float) {
-        if (m_fields->drawn) return;
+        if (m_fields->drawn) { refreshGoldProgress(); return; }
         int count = goldCoinCounts[m_fields->key];
         if (count < 0) return;
         m_fields->drawn = true;
-        unschedule(schedule_selector(OwnerGoldCoinInfo::pollGoldCoins));
-        if (count == 0) return;
+        if (count == 0) { unschedule(schedule_selector(OwnerGoldCoinInfo::pollGoldCoins)); return; }
         CCPoint position{getContentSize().width * .32f, getContentSize().height * .55f};
         CCNode* parent = this;
         if (m_coins && m_coins->count()) {
@@ -181,6 +179,7 @@ class $modify(OwnerGoldCoinInfo, LevelInfoLayer) {
             for (auto* coin : CCArrayExt<CCNode*>(m_coins)) total += coin->getPositionX();
             position.x = total / m_coins->count();
         }
+        position.y += 9.f;
         for (int i = 0; i < count; ++i) {
             auto* coin = CCSprite::createWithSpriteFrameName("GJ_coinsIcon_001.png");
             if (!coin) continue;

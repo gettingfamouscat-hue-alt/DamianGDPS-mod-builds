@@ -10,10 +10,7 @@ inline std::string key(int levelID, int index) {
         + std::to_string(levelID) + ":" + std::to_string(index);
 }
 inline bool collected(GJGameLevel* level, int index) {
-    if (geode::Mod::get()->getSavedValue<bool>(key(static_cast<int>(level->m_levelID), index), false)) return true;
-    // Preserve coins collected before the dedicated gold-coin tracking existed.
-    auto coinKey = level->getCoinKey(index);
-    return GameStatsManager::get()->hasUserCoin(coinKey)
-        || GameStatsManager::get()->hasPendingUserCoin(coinKey);
+    if (!level || index < 1 || index > 3) return false;
+    return geode::Mod::get()->getSavedValue<bool>(key(static_cast<int>(level->m_levelID), index), false);
 }
 }
