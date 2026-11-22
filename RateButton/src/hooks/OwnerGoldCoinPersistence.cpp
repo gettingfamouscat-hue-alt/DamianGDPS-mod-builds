@@ -46,6 +46,14 @@ class $modify(OwnerGoldCoinObject, GameObject) {
     };
 
 public:
+    void customSetup() {
+        GameObject::customSetup();
+        if (Utils::isOnGdps() && (m_objectID == 142 || m_fields->originalID == 142)) {
+            if (auto* frame = CCSpriteFrameCache::get()->spriteFrameByName("secretCoin_01_001.png"))
+                setDisplayFrame(frame);
+            setColor(ccWHITE);
+        }
+    }
     void restoreOwnerCoin(float) {
         if (!m_fields->originalID) return;
         m_objectID = m_fields->originalID;
@@ -59,6 +67,9 @@ public:
             }
         }
         GameObject::customSetup();
+        if (auto* frame = CCSpriteFrameCache::get()->spriteFrameByName("secretCoin_01_001.png"))
+            setDisplayFrame(frame);
+        setColor(ccWHITE);
         log::info("Owner gold coin restored: visible={}", isVisible());
     }
 
@@ -192,6 +203,7 @@ class $modify(OwnerGoldCoinPlayLayer, PlayLayer) {
             level->m_localOrSaved = true;
         }
         bool result = PlayLayer::init(level, useReplay, dontCreateObjects);
+        if (result && hasCoin) setUserObject("owner-gold-level"_spr, CCBool::create(true));
         if (hasCoin) {
             level->m_levelType = originalType;
             level->m_localOrSaved = originalLocal;
