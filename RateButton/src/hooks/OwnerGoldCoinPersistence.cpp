@@ -9,6 +9,7 @@
 #include <thread>
 #include "../managers/SessionManager.hpp"
 #include "../utils/Utils.hpp"
+#include "../utils/GoldCoinProgress.hpp"
 
 using namespace geode::prelude;
 
@@ -95,6 +96,17 @@ public:
     void playDestroyObjectAnim(GJBaseGameLayer* layer) {
         if (m_objectID == 142 && Utils::isOnGdps()) {
             if (auto* play = typeinfo_cast<PlayLayer*>(layer)) {
+                if (!play->m_isPracticeMode) {
+                    auto* index = typeinfo_cast<CCInteger*>(getUserObject("owner-gold-index"_spr));
+                    if (index) {
+                        auto* touched = typeinfo_cast<CCArray*>(play->getUserObject("owner-gold-collected"_spr));
+                        if (!touched) {
+                            touched = CCArray::create();
+                            play->setUserObject("owner-gold-collected"_spr, touched);
+                        }
+                        touched->addObject(CCInteger::create(index->getValue()));
+                    }
+                }
                 if (auto* coin = typeinfo_cast<EffectGameObject*>(this)) {
                     if (!getUserObject("owner-gold-no-reward"_spr) && !play->m_isPracticeMode && coin->m_secretCoinID >= 1 && coin->m_secretCoinID <= 3) {
                         auto* slots = typeinfo_cast<CCArray*>(play->getUserObject("owner-gold-slots"_spr));
@@ -121,6 +133,12 @@ public:
             && static_cast<int>(play->m_level->m_originalLevel) == 0;
         if (!object || object->m_objectID != 142 || (!ownerCoinEditor(layer) && !playCoin)) return object;
         auto* hooked = static_cast<OwnerGoldCoinObject*>(object);
+        if (playCoin) {
+            auto* oldIndex = typeinfo_cast<CCInteger*>(play->getUserObject("owner-gold-count"_spr));
+            int index = oldIndex ? oldIndex->getValue() + 1 : 1;
+            play->setUserObject("owner-gold-count"_spr, CCInteger::create(index));
+            object->setUserObject("owner-gold-index"_spr, CCInteger::create(index));
+        }
         object->setUserObject("owner-gold-object"_spr, CCBool::create(true));
         hooked->m_fields->originalID = object->m_objectID;
         hooked->m_fields->originalType = object->m_objectType;
@@ -167,19 +185,25 @@ class $modify(OwnerGoldCoinLevelEditor, LevelEditorLayer) {
 class $modify(OwnerGoldCoinPlayLayer, PlayLayer) {
     void resetLevel() {
         setUserObject("owner-gold-slots"_spr, nullptr);
+        setUserObject("owner-gold-collected"_spr, nullptr);
         PlayLayer::resetLevel();
     }
 
     void levelComplete() {
         std::vector<int> collected;
+        std::vector<int> displayCollected;
         int levelID = 0;
         if (Utils::isOnGdps() && m_level && !m_isPracticeMode
             && m_level->m_levelType == GJLevelType::Saved) {
             levelID = static_cast<int>(m_level->m_levelID);
             if (auto* slots = typeinfo_cast<CCArray*>(getUserObject("owner-gold-slots"_spr)))
                 for (auto* slot : CCArrayExt<CCInteger*>(slots)) collected.push_back(slot->getValue());
+            if (auto* touched = typeinfo_cast<CCArray*>(getUserObject("owner-gold-collected"_spr)))
+                for (auto* index : CCArrayExt<CCInteger*>(touched)) displayCollected.push_back(index->getValue());
         }
         PlayLayer::levelComplete();
+        if (levelID > 0) for (int index : displayCollected)
+            if (index >= 1 && index <= 3) Mod::get()->setSavedValue(GoldCoinProgress::key(levelID, index), true);
         if (levelID <= 0 || collected.empty()) return;
         auto* account = GJAccountManager::get();
         int accountID = static_cast<int>(account->m_accountID);

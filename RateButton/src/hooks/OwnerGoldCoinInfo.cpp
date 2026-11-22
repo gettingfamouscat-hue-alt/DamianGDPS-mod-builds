@@ -6,6 +6,7 @@
 #include <thread>
 #include <map>
 #include "../utils/Utils.hpp"
+#include "../utils/GoldCoinProgress.hpp"
 using namespace geode::prelude;
 namespace {
 std::map<std::string, int> goldCoinCounts;
@@ -32,6 +33,7 @@ void restorePendingCoinArt(CCNode* node) {
         for (auto* child : CCArrayExt<CCNode*>(children)) restorePendingCoinArt(child);
 }
 void replaceCoinArt(CCNode* node, bool pending = false) {
+    if (node->getID() == "owner-gold-row"_spr) return;
     if (auto* sprite = typeinfo_cast<CCSprite*>(node)) {
         for (auto pair : {std::pair{"secretCoinUI2_001.png", "secretCoinUI_001.png"},
                 std::pair{"usercoin_small01_001.png", "GJ_coinsIcon_001.png"},
@@ -88,13 +90,19 @@ class $modify(OwnerGoldCoinEndScreen, EndLevelLayer) {
 };
 }
 class $modify(OwnerGoldCoinCell, LevelCell) {
-    struct Fields { std::string key; bool logged = false; };
+    struct Fields { std::string key; bool logged = false; Ref<CCNode> row; int count = 0; };
     void loadFromLevel(GJGameLevel* level) {
+        if (m_fields->row) m_fields->row->removeFromParent();
+        m_fields->row = nullptr;
+        m_fields->count = 0;
+        m_fields->key.clear();
+        m_fields->logged = false;
         LevelCell::loadFromLevel(level);
         if (!Utils::isOnGdps() || !level || static_cast<int>(level->m_levelID) <= 0) return;
         m_fields->key = requestGoldCoins(static_cast<int>(level->m_levelID));
         if (goldCoinCounts[m_fields->key] < 0) replaceCoinArt(this, true);
-        else if (goldCoinCounts[m_fields->key] > 0) replaceCoinArt(this);
+        else if (goldCoinCounts[m_fields->key] > 0) replaceCoinArt(this, true);
+        refreshGoldArt(0.f);
         schedule(schedule_selector(OwnerGoldCoinCell::refreshGoldArt), .05f);
     }
     void refreshGoldArt(float) {
@@ -103,12 +111,46 @@ class $modify(OwnerGoldCoinCell, LevelCell) {
             log::info("Gold coin list status: {} = {}", m_fields->key, goldCoinCounts[m_fields->key]);
             m_fields->logged = true;
         }
-        if (goldCoinCounts[m_fields->key] >= 0) restorePendingCoinArt(this);
-        if (goldCoinCounts[m_fields->key] > 0) replaceCoinArt(this);
+        int count = goldCoinCounts[m_fields->key];
+        if (count == 0) restorePendingCoinArt(this);
+        if (count <= 0 || !m_level) return;
+        replaceCoinArt(this, true);
+        if (!m_fields->row || m_fields->count != count) {
+            if (m_fields->row) m_fields->row->removeFromParent();
+            auto* row = CCNode::create();
+            row->setID("owner-gold-row"_spr);
+            m_fields->row = row;
+            m_fields->count = count;
+            addChild(row, 50);
+            for (int i = 0; i < count; ++i) {
+                auto* coin = CCSprite::createWithSpriteFrameName("GJ_coinsIcon_001.png");
+                coin->setScale(11.f / coin->getContentSize().width);
+                coin->setPosition({(i - (count - 1) / 2.f) * 12.f, 0.f});
+                row->addChild(coin, 0, i + 1);
+            }
+        }
+        if (auto* face = getChildByIDRecursive("difficulty-sprite")) {
+            auto size = face->getContentSize();
+            auto center = convertToNodeSpace(face->convertToWorldSpace({size.width / 2.f, 0.f}));
+            m_fields->row->setPosition(center + CCPoint{0.f, -19.f});
+        }
+        for (int i = 1; i <= count; ++i) {
+            auto* coin = static_cast<CCSprite*>(m_fields->row->getChildByTag(i));
+            coin->setColor(GoldCoinProgress::collected(m_level, i) ? ccWHITE : ccColor3B{105,105,105});
+        }
     }
 };
 class $modify(OwnerGoldCoinInfo, LevelInfoLayer) {
     struct Fields { std::string key; bool drawn = false; };
+    void onEnter() {
+        LevelInfoLayer::onEnter();
+        if (!m_level || !Utils::isOnGdps()) return;
+        for (int index = 1; index <= 3; ++index) {
+            auto id = fmt::format("owner-gold-icon-{}", index);
+            if (auto* coin = typeinfo_cast<CCSprite*>(getChildByIDRecursive(id)))
+                coin->setColor(GoldCoinProgress::collected(m_level, index) ? ccWHITE : ccColor3B{105,105,105});
+        }
+    }
     bool init(GJGameLevel* level, bool challenge) {
         if (!LevelInfoLayer::init(level, challenge)) return false;
         if (!Utils::isOnGdps() || !level || static_cast<int>(level->m_levelID) <= 0) return true;
@@ -131,11 +173,21 @@ class $modify(OwnerGoldCoinInfo, LevelInfoLayer) {
             parent = first->getParent();
             for (auto* coin : CCArrayExt<CCNode*>(m_coins)) coin->setVisible(false);
         }
+        if (auto* face = getChildByIDRecursive("difficulty-sprite")) {
+            auto size = face->getContentSize();
+            position.x = parent->convertToNodeSpace(face->convertToWorldSpace({size.width / 2.f, size.height / 2.f})).x;
+        } else if (m_coins && m_coins->count()) {
+            float total = 0.f;
+            for (auto* coin : CCArrayExt<CCNode*>(m_coins)) total += coin->getPositionX();
+            position.x = total / m_coins->count();
+        }
         for (int i = 0; i < count; ++i) {
             auto* coin = CCSprite::createWithSpriteFrameName("GJ_coinsIcon_001.png");
             if (!coin) continue;
+            coin->setID(fmt::format("owner-gold-icon-{}", i + 1));
             coin->setScale(13.f / coin->getContentSize().width);
-            coin->setPosition(position + CCPoint{20.f * i, 0.f});
+            coin->setPosition(position + CCPoint{14.f * (i - (count - 1) / 2.f), 0.f});
+            coin->setColor(GoldCoinProgress::collected(m_level, i + 1) ? ccWHITE : ccColor3B{105,105,105});
             parent->addChild(coin, 20);
         }
     }
