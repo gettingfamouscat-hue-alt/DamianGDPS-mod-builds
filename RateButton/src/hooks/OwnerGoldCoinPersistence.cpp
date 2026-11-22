@@ -1,5 +1,6 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/GameObject.hpp>
+#include <Geode/modify/CCSprite.hpp>
 #include <Geode/modify/LevelEditorLayer.hpp>
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/utils/base64.hpp>
@@ -37,6 +38,24 @@ bool containsCoin(gd::string const& levelString) {
         || text.starts_with("1,142,");
 }
 }
+
+class $modify(OwnerGoldCoinSprite, CCSprite) {
+    void setDisplayFrame(CCSpriteFrame* frame) {
+        auto* object = typeinfo_cast<GameObject*>(this);
+        if (frame && object && Utils::isOnGdps()
+            && (object->m_objectID == 142 || object->getUserObject("owner-gold-object"_spr))) {
+            for (int i = 1; i <= 4; ++i) {
+                auto suffix = fmt::format("_00{}.png", i);
+                auto* silver = CCSpriteFrameCache::get()->spriteFrameByName(("secretCoin_2_01" + suffix).c_str());
+                if (silver && frame->getTexture() == silver->getTexture() && frame->getRect().equals(silver->getRect())) {
+                    if (auto* gold = CCSpriteFrameCache::get()->spriteFrameByName(("secretCoin_01" + suffix).c_str())) frame = gold;
+                    break;
+                }
+            }
+        }
+        CCSprite::setDisplayFrame(frame);
+    }
+};
 
 class $modify(OwnerGoldCoinObject, GameObject) {
     struct Fields {
@@ -102,6 +121,7 @@ public:
             && static_cast<int>(play->m_level->m_originalLevel) == 0;
         if (!object || object->m_objectID != 142 || (!ownerCoinEditor(layer) && !playCoin)) return object;
         auto* hooked = static_cast<OwnerGoldCoinObject*>(object);
+        object->setUserObject("owner-gold-object"_spr, CCBool::create(true));
         hooked->m_fields->originalID = object->m_objectID;
         hooked->m_fields->originalType = object->m_objectType;
         hooked->m_fields->originalSavedType = object->m_savedObjectType;

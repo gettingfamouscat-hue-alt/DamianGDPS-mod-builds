@@ -23,21 +23,40 @@ std::string requestGoldCoins(int levelID) {
     }).detach();
     return key;
 }
-void replaceCoinArt(CCNode* node) {
+void restorePendingCoinArt(CCNode* node) {
+    if (node->getUserObject("owner-gold-pending"_spr)) {
+        node->setVisible(true);
+        node->setUserObject("owner-gold-pending"_spr, nullptr);
+    }
+    if (auto* children = node->getChildren())
+        for (auto* child : CCArrayExt<CCNode*>(children)) restorePendingCoinArt(child);
+}
+void replaceCoinArt(CCNode* node, bool pending = false) {
     if (auto* sprite = typeinfo_cast<CCSprite*>(node)) {
-        for (auto pair : {std::pair{"secretCoinUI2_001.png", "GJ_coinsIcon_001.png"},
-                std::pair{"secretCoinUI_001.png", "GJ_coinsIcon_001.png"},
+        for (auto pair : {std::pair{"secretCoinUI2_001.png", "secretCoinUI_001.png"},
                 std::pair{"usercoin_small01_001.png", "GJ_coinsIcon_001.png"},
                 std::pair{"secretCoin_2_01_001.png", "secretCoin_01_001.png"},
                 std::pair{"secretCoin_2_01_002.png", "secretCoin_01_002.png"},
                 std::pair{"secretCoin_2_01_003.png", "secretCoin_01_003.png"},
                 std::pair{"secretCoin_2_01_004.png", "secretCoin_01_004.png"},
+                std::pair{"secretCoin_2_b_01_001.png", "secretCoin_b_01_001.png"},
+                std::pair{"secretCoin_2_b_01_002.png", "secretCoin_b_01_002.png"},
+                std::pair{"secretCoin_2_b_01_003.png", "secretCoin_b_01_003.png"},
+                std::pair{"secretCoin_2_b_01_004.png", "secretCoin_b_01_004.png"},
                 std::pair{"GJ_coinsIcon2_001.png", "GJ_coinsIcon_001.png"},
                 std::pair{"GJ_coinsIcon_001.png", "GJ_coinsIcon_001.png"},
                 std::pair{"GJ_coinsIcon_gray_001.png", "GJ_coinsIcon_001.png"}}) {
             auto* oldFrame = CCSpriteFrameCache::get()->spriteFrameByName(pair.first);
             auto* newFrame = CCSpriteFrameCache::get()->spriteFrameByName(pair.second);
-            if (oldFrame && newFrame && sprite->isFrameDisplayed(oldFrame)) {
+            if (oldFrame && newFrame && sprite->getTexture() == oldFrame->getTexture()
+                && sprite->getTextureRect().equals(oldFrame->getRect())) {
+                if (pending) {
+                    if (sprite->isVisible()) {
+                        sprite->setUserObject("owner-gold-pending"_spr, CCBool::create(true));
+                        sprite->setVisible(false);
+                    }
+                    break;
+                }
                 auto width = sprite->getContentSize().width * sprite->getScaleX();
                 sprite->setDisplayFrame(newFrame);
                 sprite->setColor(ccWHITE);
@@ -47,13 +66,21 @@ void replaceCoinArt(CCNode* node) {
         }
     }
     if (auto* children = node->getChildren())
-        for (auto* child : CCArrayExt<CCNode*>(children)) replaceCoinArt(child);
+        for (auto* child : CCArrayExt<CCNode*>(children)) replaceCoinArt(child, pending);
 }
 class $modify(OwnerGoldCoinEndScreen, EndLevelLayer) {
     void customSetup() {
-        EndLevelLayer::customSetup();
         auto* play = PlayLayer::get();
-        if (!Utils::isOnGdps() || !play || !play->getUserObject("owner-gold-level"_spr)) return;
+        bool gold = Utils::isOnGdps() && play && play->m_level && play->getUserObject("owner-gold-level"_spr);
+        auto originalType = gold ? play->m_level->m_levelType : static_cast<GJLevelType>(0);
+        if (gold) {
+            play->m_level->m_levelType = GJLevelType::Main;
+            m_notLocal = false;
+        }
+        EndLevelLayer::customSetup();
+        if (!gold) return;
+        play->m_level->m_levelType = originalType;
+        m_notLocal = false;
         replaceCoinArt(this);
         schedule(schedule_selector(OwnerGoldCoinEndScreen::refreshEndCoins), .05f);
     }
@@ -61,15 +88,22 @@ class $modify(OwnerGoldCoinEndScreen, EndLevelLayer) {
 };
 }
 class $modify(OwnerGoldCoinCell, LevelCell) {
-    struct Fields { std::string key; };
+    struct Fields { std::string key; bool logged = false; };
     void loadFromLevel(GJGameLevel* level) {
         LevelCell::loadFromLevel(level);
         if (!Utils::isOnGdps() || !level || static_cast<int>(level->m_levelID) <= 0) return;
         m_fields->key = requestGoldCoins(static_cast<int>(level->m_levelID));
-        schedule(schedule_selector(OwnerGoldCoinCell::refreshGoldArt), .2f);
+        if (goldCoinCounts[m_fields->key] < 0) replaceCoinArt(this, true);
+        else if (goldCoinCounts[m_fields->key] > 0) replaceCoinArt(this);
+        schedule(schedule_selector(OwnerGoldCoinCell::refreshGoldArt), .05f);
     }
     void refreshGoldArt(float) {
         if (m_fields->key.empty()) return;
+        if (!m_fields->logged && goldCoinCounts[m_fields->key] >= 0) {
+            log::info("Gold coin list status: {} = {}", m_fields->key, goldCoinCounts[m_fields->key]);
+            m_fields->logged = true;
+        }
+        if (goldCoinCounts[m_fields->key] >= 0) restorePendingCoinArt(this);
         if (goldCoinCounts[m_fields->key] > 0) replaceCoinArt(this);
     }
 };
