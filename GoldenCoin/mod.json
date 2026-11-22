@@ -7,8 +7,8 @@
     },
     "id": "damian.goldencoin",
     "name": "Golden Coin",
-    "version": "v1.0.0",
-    "developer": "Damian GDPS",
+    "version": "v1.0.1",
+    "developer": "damian",
     "description": "Owner-only golden secret coins for Damian GDPS, with collection effects and progress indicators.",
     "dependencies": {
         "alphalaneous.editortab_api": ">=v2.1.13",

@@ -1,6 +1,7 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/LevelInfoLayer.hpp>
 #include <Geode/modify/LevelCell.hpp>
+#include <Geode/binding/LevelBrowserLayer.hpp>
 #include <Geode/modify/EndLevelLayer.hpp>
 #include <Geode/utils/web.hpp>
 #include <thread>
@@ -128,18 +129,31 @@ class $modify(OwnerGoldCoinCell, LevelCell) {
         m_fields->key.clear();
         m_fields->logged = false;
         LevelCell::loadFromLevel(level);
-        // Local editor IDs can coincide with published level IDs. Only online
-        // levels should look up and display the server's gold-coin metadata.
-        if (!GoldenCoin::isOnGdps() || !level || level->m_levelType != GJLevelType::Saved
-            || static_cast<int>(level->m_levelID) <= 0) return;
-        m_fields->key = requestGoldCoins(static_cast<int>(level->m_levelID));
-        if (goldCoinCounts[m_fields->key] < 0) replaceCoinArt(this, true);
-        else if (goldCoinCounts[m_fields->key] > 0) replaceCoinArt(this, true);
-        refreshGoldArt(0.f);
+        if (!GoldenCoin::isOnGdps() || !level || static_cast<int>(level->m_levelID) <= 0) return;
+        // Wait for the cell to attach to its browser: My Online Levels can
+        // contain cached editor objects, so the object's type is insufficient.
         schedule(schedule_selector(OwnerGoldCoinCell::refreshGoldArt), .05f);
     }
     void refreshGoldArt(float) {
-        if (m_fields->key.empty() || !m_level || m_level->m_levelType != GJLevelType::Saved) return;
+        if (!m_level || !getParent()) return;
+        LevelBrowserLayer* browser = nullptr;
+        for (auto* parent = getParent(); parent; parent = parent->getParent()) {
+            if ((browser = typeinfo_cast<LevelBrowserLayer*>(parent))) break;
+        }
+        bool local = browser && browser->m_searchObject
+            ? browser->m_searchObject->m_searchType == SearchType::MyLevels
+                || browser->m_searchObject->m_searchType == SearchType::SmartTemplates
+            : m_level->m_levelType != GJLevelType::Saved;
+        if (local) {
+            if (m_fields->row) m_fields->row->removeFromParent();
+            m_fields->row = nullptr;
+            unschedule(schedule_selector(OwnerGoldCoinCell::refreshGoldArt));
+            return;
+        }
+        if (m_fields->key.empty()) {
+            m_fields->key = requestGoldCoins(static_cast<int>(m_level->m_levelID));
+            replaceCoinArt(this, true);
+        }
         if (!m_fields->logged && goldCoinCounts[m_fields->key] >= 0) {
             log::info("Gold coin list status: {} = {}", m_fields->key, goldCoinCounts[m_fields->key]);
             m_fields->logged = true;
