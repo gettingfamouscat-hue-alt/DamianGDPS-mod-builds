@@ -3,6 +3,7 @@
 #include <Geode/modify/CCSprite.hpp>
 #include <Geode/modify/LevelEditorLayer.hpp>
 #include <Geode/modify/PlayLayer.hpp>
+#include <Geode/modify/GJBaseGameLayer.hpp>
 #include <Geode/utils/base64.hpp>
 #include <Geode/cocos/support/zip_support/ZipUtils.h>
 #include <Geode/utils/web.hpp>
@@ -13,11 +14,36 @@
 using namespace geode::prelude;
 
 namespace {
+thread_local GJBaseGameLayer* officialCoinLoadingLayer = nullptr;
+struct OfficialCoinLoadScope {
+    GJBaseGameLayer* previous;
+    OfficialCoinLoadScope(bool enabled, GJBaseGameLayer* layer)
+        : previous(officialCoinLoadingLayer) {
+        if (enabled) officialCoinLoadingLayer = layer;
+    }
+    ~OfficialCoinLoadScope() { officialCoinLoadingLayer = previous; }
+};
+bool customLevel(GJGameLevel* level) {
+    return level && (level->m_levelType == GJLevelType::Editor || level->m_levelType == GJLevelType::Saved);
+}
+bool officialCosmeticLayer(GJBaseGameLayer* layer) {
+    return layer && !GoldenCoin::isOnGdps()
+        && (officialCoinLoadingLayer == layer || customLevel(layer->m_level));
+}
+void setCosmeticCoin(GameObject* object) {
+    object->setUserObject("owner-gold-cosmetic"_spr, CCBool::create(true));
+    object->m_objectType = GameObjectType::Collectible;
+    object->m_savedObjectType = GameObjectType::Collectible;
+    if (auto* effect = typeinfo_cast<EffectGameObject*>(object)) effect->m_collectibleIsPickupItem = true;
+    if (auto* frame = CCSpriteFrameCache::get()->spriteFrameByName("secretCoin_01_001.png"))
+        object->setDisplayFrame(frame);
+    object->setColor(ccWHITE);
+}
 bool ownerCoinEditor(GJBaseGameLayer* layer) {
     auto* editor = typeinfo_cast<LevelEditorLayer*>(layer);
-    return editor && editor->m_level && GoldenCoin::isOnGdps()
-        && GoldenCoin::accountID() == 1
-        && static_cast<int>(editor->m_level->m_originalLevel) == 0;
+    return editor && editor->m_level && (officialCosmeticLayer(editor)
+        || (GoldenCoin::isOnGdps() && GoldenCoin::accountID() == 1
+            && static_cast<int>(editor->m_level->m_originalLevel) == 0));
 }
 bool containsCoin(gd::string const& levelString) {
     auto text = std::string(levelString.c_str());
@@ -42,7 +68,7 @@ bool containsCoin(gd::string const& levelString) {
 class $modify(OwnerGoldCoinSprite, CCSprite) {
     void setDisplayFrame(CCSpriteFrame* frame) {
         auto* object = typeinfo_cast<GameObject*>(this);
-        if (frame && object && GoldenCoin::isOnGdps()
+        if (frame && object && (GoldenCoin::isOnGdps() || object->getUserObject("owner-gold-cosmetic"_spr))
             && (object->m_objectID == 142 || object->getUserObject("owner-gold-object"_spr))) {
             for (int i = 1; i <= 4; ++i) {
                 auto suffix = fmt::format("_00{}.png", i);
@@ -67,6 +93,10 @@ class $modify(OwnerGoldCoinObject, GameObject) {
 public:
     void customSetup() {
         GameObject::customSetup();
+        if (getUserObject("owner-gold-cosmetic"_spr)) {
+            setCosmeticCoin(this);
+            return;
+        }
         if (GoldenCoin::isOnGdps() && (m_objectID == 142 || m_fields->originalID == 142)) {
             if (auto* frame = CCSpriteFrameCache::get()->spriteFrameByName("secretCoin_01_001.png"))
                 setDisplayFrame(frame);
@@ -80,12 +110,16 @@ public:
         m_savedObjectType = m_fields->originalSavedType;
         m_fields->originalID = 0;
         if (auto* coin = typeinfo_cast<EffectGameObject*>(this)) {
-            if (PlayLayer::get() && coin->m_secretCoinID == 0) {
+            if (!getUserObject("owner-gold-cosmetic"_spr) && PlayLayer::get() && coin->m_secretCoinID == 0) {
                 setUserObject("owner-gold-no-reward"_spr, CCBool::create(true));
                 coin->m_secretCoinID = 1;
             }
         }
         GameObject::customSetup();
+        if (getUserObject("owner-gold-cosmetic"_spr)) {
+            setCosmeticCoin(this);
+            return;
+        }
         if (auto* frame = CCSpriteFrameCache::get()->spriteFrameByName("secretCoin_01_001.png"))
             setDisplayFrame(frame);
         setColor(ccWHITE);
@@ -130,8 +164,10 @@ public:
         auto* play = typeinfo_cast<PlayLayer*>(layer);
         bool playCoin = play && play->m_level && GoldenCoin::isOnGdps()
             && static_cast<int>(play->m_level->m_originalLevel) == 0;
-        if (!object || object->m_objectID != 142 || (!ownerCoinEditor(layer) && !playCoin)) return object;
+        bool cosmetic = officialCosmeticLayer(layer);
+        if (!object || object->m_objectID != 142 || (!ownerCoinEditor(layer) && !playCoin && !cosmetic)) return object;
         auto* hooked = static_cast<OwnerGoldCoinObject*>(object);
+        if (cosmetic) object->setUserObject("owner-gold-cosmetic"_spr, CCBool::create(true));
         if (playCoin) {
             auto* oldIndex = typeinfo_cast<CCInteger*>(play->getUserObject("owner-gold-count"_spr));
             int index = oldIndex ? oldIndex->getValue() + 1 : 1;
@@ -148,26 +184,33 @@ public:
         hooked->m_fields->originalID = object->m_objectID;
         hooked->m_fields->originalType = object->m_objectType;
         hooked->m_fields->originalSavedType = object->m_savedObjectType;
-        object->m_objectID = 1329;
-        object->m_objectType = GameObjectType::UserCoin;
-        object->m_savedObjectType = GameObjectType::UserCoin;
+        object->m_objectID = cosmetic ? 1275 : 1329;
+        object->m_objectType = cosmetic ? GameObjectType::Collectible : GameObjectType::UserCoin;
+        object->m_savedObjectType = object->m_objectType;
         hooked->scheduleOnce(schedule_selector(OwnerGoldCoinObject::restoreOwnerCoin), 0.f);
         return object;
     }
 };
 
 class $modify(OwnerGoldCoinLevelEditor, LevelEditorLayer) {
+    GameObject* createObject(int key, CCPoint position, bool noUndo) {
+        auto* object = LevelEditorLayer::createObject(key, position, noUndo);
+        if (object && key == 142 && officialCosmeticLayer(this)) setCosmeticCoin(object);
+        return object;
+    }
     bool init(GJGameLevel* level, bool noUI) {
         bool owner = level && GoldenCoin::isOnGdps() && GoldenCoin::accountID() == 1
             && static_cast<int>(level->m_originalLevel) == 0;
+        bool cosmetic = !GoldenCoin::isOnGdps() && customLevel(level) && containsCoin(level->m_levelString);
+        OfficialCoinLoadScope scope(cosmetic, this);
         auto originalType = level ? level->m_levelType : static_cast<GJLevelType>(0);
         auto originalLocal = level && level->m_localOrSaved;
-        if (owner) {
+        if (owner || cosmetic) {
             level->m_levelType = GJLevelType::Main;
             level->m_localOrSaved = true;
         }
         bool result = LevelEditorLayer::init(level, noUI);
-        if (owner) {
+        if (owner || cosmetic) {
             level->m_levelType = originalType;
             level->m_localOrSaved = originalLocal;
         }
@@ -176,6 +219,14 @@ class $modify(OwnerGoldCoinLevelEditor, LevelEditorLayer) {
 
     gd::string getLevelString() {
         auto result = LevelEditorLayer::getLevelString();
+        if (officialCosmeticLayer(this) && m_level) {
+            int userCoins = 0;
+            if (auto* objects = getAllObjects())
+                for (auto* object : CCArrayExt<GameObject*>(objects))
+                    if (object && object->m_objectID == 1329) ++userCoins;
+            // Cosmetic gold coins must not be advertised as user-coin rewards.
+            m_level->m_coins = std::min(userCoins, 3);
+        }
         if (ownerCoinEditor(this)) {
             int placed = 0;
             if (auto* objects = getAllObjects())
@@ -184,6 +235,31 @@ class $modify(OwnerGoldCoinLevelEditor, LevelEditorLayer) {
             log::info("Owner gold coin save: {} placed, serialized={}", placed, containsCoin(result));
         }
         return result;
+    }
+};
+
+class $modify(OfficialCosmeticCoinPickup, GJBaseGameLayer) {
+    void pickupItem(EffectGameObject* object) {
+        if (object && object->getUserObject("owner-gold-cosmetic"_spr) && officialCosmeticLayer(this)) {
+            if (object->m_isDisabled || object->m_isDisabled2) return;
+            auto* stats = GameStatsManager::get();
+            int secretCoins = stats->getStat("8");
+            int userCoins = stats->getStat("12");
+            auto type = object->m_objectType;
+            auto slot = object->m_secretCoinID;
+            if (slot < 1 || slot > 3) object->m_secretCoinID = 1;
+            object->m_objectType = GameObjectType::SecretCoin;
+            object->playDestroyObjectAnim(this);
+            object->m_objectType = type;
+            object->m_secretCoinID = slot;
+            object->m_isActivated = true;
+            object->destroyObject();
+            log::info("Cosmetic gold coin pickup: secret total unchanged={}, user total unchanged={}",
+                stats->getStat("8") == secretCoins, stats->getStat("12") == userCoins);
+            // Skip native pickup accounting: no coins, items, counters, or rewards.
+            return;
+        }
+        GJBaseGameLayer::pickupItem(object);
     }
 };
 
@@ -237,9 +313,12 @@ class $modify(OwnerGoldCoinPlayLayer, PlayLayer) {
     }
 
     bool init(GJGameLevel* level, bool useReplay, bool dontCreateObjects) {
-        bool hasCoin = level && GoldenCoin::isOnGdps()
+        bool gdpsCoin = level && GoldenCoin::isOnGdps()
             && static_cast<int>(level->m_originalLevel) == 0
             && containsCoin(level->m_levelString);
+        bool cosmetic = !GoldenCoin::isOnGdps() && customLevel(level) && containsCoin(level->m_levelString);
+        bool hasCoin = gdpsCoin || cosmetic;
+        OfficialCoinLoadScope scope(cosmetic, this);
         if (level && GoldenCoin::isOnGdps()) {
             std::string data = level->m_levelString.c_str();
             log::info("Owner gold coin play load: hasCoin={}, bytes={}, prefix={}",
@@ -252,7 +331,7 @@ class $modify(OwnerGoldCoinPlayLayer, PlayLayer) {
             level->m_localOrSaved = true;
         }
         bool result = PlayLayer::init(level, useReplay, dontCreateObjects);
-        if (result && hasCoin) setUserObject("owner-gold-level"_spr, CCBool::create(true));
+        if (result && gdpsCoin) setUserObject("owner-gold-level"_spr, CCBool::create(true));
         if (hasCoin) {
             level->m_levelType = originalType;
             level->m_localOrSaved = originalLocal;
