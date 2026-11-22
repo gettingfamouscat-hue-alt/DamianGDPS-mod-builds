@@ -71,22 +71,55 @@ void replaceCoinArt(CCNode* node, bool pending = false) {
         for (auto* child : CCArrayExt<CCNode*>(children)) replaceCoinArt(child, pending);
 }
 class $modify(OwnerGoldCoinEndScreen, EndLevelLayer) {
+    void hideNoCoinMessage(CCNode* node) {
+        if (node->getID() == "owner-gold-row"_spr) return;
+        if (auto* label = typeinfo_cast<CCLabelBMFont*>(node)) {
+            std::string text = label->getString();
+            std::transform(text.begin(), text.end(), text.begin(), [](unsigned char c) { return std::tolower(c); });
+            if (text.find("speechless") != std::string::npos) label->setVisible(false);
+        }
+        if (auto* children = node->getChildren())
+            for (auto* child : CCArrayExt<CCNode*>(children)) hideNoCoinMessage(child);
+    }
     void customSetup() {
         auto* play = PlayLayer::get();
         bool gold = Utils::isOnGdps() && play && play->m_level && play->getUserObject("owner-gold-level"_spr);
-        auto originalType = gold ? play->m_level->m_levelType : static_cast<GJLevelType>(0);
-        if (gold) {
-            play->m_level->m_levelType = GJLevelType::Main;
-            m_notLocal = false;
-        }
         EndLevelLayer::customSetup();
         if (!gold) return;
-        play->m_level->m_levelType = originalType;
-        m_notLocal = false;
-        replaceCoinArt(this);
+        auto* countValue = typeinfo_cast<CCInteger*>(play->getUserObject("owner-gold-count"_spr));
+        int count = std::clamp(countValue ? countValue->getValue() : play->m_level->m_coins, 0, 3);
+        if (!count) return;
+        replaceCoinArt(this, true);
+        hideNoCoinMessage(this);
+        bool collected[4] = {};
+        if (auto* touched = typeinfo_cast<CCArray*>(play->getUserObject("owner-gold-collected"_spr))) {
+            for (auto* value : CCArrayExt<CCInteger*>(touched)) {
+                int index = value->getValue();
+                if (index >= 1 && index <= 3) collected[index] = true;
+            }
+        }
+        auto* row = CCNode::create();
+        row->setID("owner-gold-row"_spr);
+        auto size = CCDirector::get()->getWinSize();
+        row->setPosition({size.width / 2.f, size.height * .31f});
+        m_mainLayer->addChild(row, 30);
+        for (int index = 1; index <= count; ++index) {
+            auto* coin = CCSprite::createWithSpriteFrameName("GJ_coinsIcon_001.png");
+            if (!coin) continue;
+            float scale = 32.f / coin->getContentSize().width;
+            coin->setScale(scale);
+            coin->setColor(collected[index] ? ccWHITE : ccColor3B{90,90,90});
+            coin->setPosition({(index - 1 - (count - 1) / 2.f) * 38.f, 0.f});
+            row->addChild(coin);
+            if (collected[index]) {
+                coin->setScale(scale * .65f);
+                coin->runAction(CCSequence::create(CCDelayTime::create(.12f * index),
+                    CCEaseBackOut::create(CCScaleTo::create(.25f, scale)), nullptr));
+            }
+        }
         schedule(schedule_selector(OwnerGoldCoinEndScreen::refreshEndCoins), .05f);
     }
-    void refreshEndCoins(float) { replaceCoinArt(this); }
+    void refreshEndCoins(float) { replaceCoinArt(this, true); hideNoCoinMessage(this); }
 };
 }
 class $modify(OwnerGoldCoinCell, LevelCell) {
