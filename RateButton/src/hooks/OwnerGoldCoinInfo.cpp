@@ -46,13 +46,9 @@ class $modify(OwnerGoldCoinInfo, LevelInfoLayer) {
         for (int i = 0; i < count; ++i) {
             auto* coin = CCSprite::createWithSpriteFrameName("secretCoinUI_001.png");
             if (!coin) continue;
-            coin->setScale(.7f);
+            coin->setScale(12.f / coin->getContentSize().width);
             coin->setPosition(position + CCPoint{20.f * i, 0.f});
             parent->addChild(coin, 20);
         }
-        auto* label = CCLabelBMFont::create("Golden Coin", "chatFont.fnt");
-        label->setScale(.45f);
-        label->setPosition(position + CCPoint{10.f * (count - 1), -16.f});
-        parent->addChild(label, 20);
     }
 };

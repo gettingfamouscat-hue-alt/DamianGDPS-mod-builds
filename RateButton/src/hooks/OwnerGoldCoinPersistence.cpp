@@ -5,7 +5,6 @@
 #include <Geode/utils/base64.hpp>
 #include <Geode/cocos/support/zip_support/ZipUtils.h>
 #include <Geode/utils/web.hpp>
-#include <Geode/cocos/shaders/ccShaders.h>
 #include <thread>
 #include "../managers/SessionManager.hpp"
 #include "../utils/Utils.hpp"
@@ -13,66 +12,6 @@
 using namespace geode::prelude;
 
 namespace {
-void applyCoinColorShader(GameObject* coin) {
-    if (coin->m_baseColor) coin->m_baseColor->m_defaultColorID = 1011;
-    if (!coin->m_detailColor) coin->m_detailColor = new GJSpriteColor();
-    coin->m_detailColor->m_defaultColorID = 1011;
-    if (!coin->m_colorSprite) {
-        coin->m_colorSprite = CCSprite::create();
-        coin->addChild(coin->m_colorSprite);
-    }
-    if (!coin->getUserObject("owner-gold-color"_spr)) {
-        auto* candidate = new CCGLProgram();
-        char const* fragment = R"(
-#ifdef GL_ES
-precision mediump float;
-#endif
-varying vec4 v_fragmentColor;
-varying vec2 v_texCoord;
-uniform sampler2D CC_Texture0;
-uniform vec3 u_base;
-uniform vec3 u_detail;
-uniform vec4 u_rect;
-void main() {
-    vec4 tex = texture2D(CC_Texture0, v_texCoord);
-    vec2 localUV = (v_texCoord-u_rect.xy)/u_rect.zw-vec2(0.5);
-    float rim = smoothstep(0.415, 0.44, length(localUV));
-    vec3 tint = mix(u_detail, u_base, rim);
-    float tinted = step(0.01, length(tint-vec3(1.0)));
-    float brightness = max(tex.r, max(tex.g, tex.b));
-    tex.rgb = mix(tex.rgb, vec3(brightness)*tint, tinted);
-    gl_FragColor = vec4(tex.rgb, tex.a*v_fragmentColor.a);
-})";
-        if (!candidate->initWithVertexShaderByteArray(ccPositionTextureColor_vert, fragment)) {
-            candidate->release();
-            return;
-        }
-        candidate->addAttribute(kCCAttributeNamePosition, kCCVertexAttrib_Position);
-        candidate->addAttribute(kCCAttributeNameColor, kCCVertexAttrib_Color);
-        candidate->addAttribute(kCCAttributeNameTexCoord, kCCVertexAttrib_TexCoords);
-        if (!candidate->link()) { candidate->release(); return; }
-        candidate->updateUniforms();
-        coin->setShaderProgram(candidate);
-        coin->setUserObject("owner-gold-color"_spr, CCBool::create(true));
-        candidate->release();
-    }
-}
-void updateCoinColorShader(GameObject* coin) {
-    if (!coin->getUserObject("owner-gold-color"_spr)) return;
-    auto* program = coin->getShaderProgram();
-    auto* texture = coin->getTexture();
-    if (!program || !texture) return;
-    auto base = coin->getActiveColorForMode(coin->getMainColorMode(), true);
-    auto detail = coin->getActiveColorForMode(coin->getSecondaryColorMode(), false);
-    auto rect = coin->getTextureRect();
-    float width = texture->getContentSize().width;
-    float height = texture->getContentSize().height;
-    program->use();
-    program->setUniformLocationWith3f(program->getUniformLocationForName("u_base"), base.r/255.f, base.g/255.f, base.b/255.f);
-    program->setUniformLocationWith3f(program->getUniformLocationForName("u_detail"), detail.r/255.f, detail.g/255.f, detail.b/255.f);
-    program->setUniformLocationWith4f(program->getUniformLocationForName("u_rect"),
-        rect.origin.x/width, rect.origin.y/height, rect.size.width/width, rect.size.height/height);
-}
 bool ownerCoinEditor(GJBaseGameLayer* layer) {
     auto* editor = typeinfo_cast<LevelEditorLayer*>(layer);
     return editor && editor->m_level && Utils::isOnGdps()
@@ -107,13 +46,6 @@ class $modify(OwnerGoldCoinObject, GameObject) {
     };
 
 public:
-    void refreshCoinColors(float) { updateCoinColorShader(this); }
-    void startCoinColors() {
-        applyCoinColorShader(this);
-        schedule(schedule_selector(OwnerGoldCoinObject::refreshCoinColors), .03f);
-        refreshCoinColors(0.f);
-    }
-
     void restoreOwnerCoin(float) {
         if (!m_fields->originalID) return;
         m_objectID = m_fields->originalID;
@@ -127,7 +59,6 @@ public:
             }
         }
         GameObject::customSetup();
-        startCoinColors();
         log::info("Owner gold coin restored: visible={}", isVisible());
     }
 
@@ -172,12 +103,6 @@ public:
 };
 
 class $modify(OwnerGoldCoinLevelEditor, LevelEditorLayer) {
-    GameObject* createObject(int key, CCPoint position, bool noUndo) {
-        auto* object = LevelEditorLayer::createObject(key, position, noUndo);
-        if (object && key == 142 && ownerCoinEditor(this))
-            static_cast<OwnerGoldCoinObject*>(object)->startCoinColors();
-        return object;
-    }
     bool init(GJGameLevel* level, bool noUI) {
         bool owner = level && Utils::isOnGdps() && SessionManager::accountID() == 1
             && static_cast<int>(level->m_originalLevel) == 0;
