@@ -12,6 +12,7 @@ on:
       - 'VersusRace/mod.json'
       - 'VersusRace/CMakeLists.txt' 
       - 'HalfBlockTab/**'
+      - 'GoldenCoin/**'
 permissions:
   contents: read
 jobs:
@@ -21,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [RateButton, VersusRace, HalfBlockTab]
+        project: [RateButton, VersusRace, HalfBlockTab, GoldenCoin]
     steps:
       - uses: actions/checkout@v7
       - uses: geode-sdk/build-geode-mod@main

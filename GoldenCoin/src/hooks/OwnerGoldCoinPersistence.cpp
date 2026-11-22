@@ -7,8 +7,7 @@
 #include <Geode/cocos/support/zip_support/ZipUtils.h>
 #include <Geode/utils/web.hpp>
 #include <thread>
-#include "../managers/SessionManager.hpp"
-#include "../utils/Utils.hpp"
+#include "../utils/CoinContext.hpp"
 #include "../utils/GoldCoinProgress.hpp"
 
 using namespace geode::prelude;
@@ -16,8 +15,8 @@ using namespace geode::prelude;
 namespace {
 bool ownerCoinEditor(GJBaseGameLayer* layer) {
     auto* editor = typeinfo_cast<LevelEditorLayer*>(layer);
-    return editor && editor->m_level && Utils::isOnGdps()
-        && SessionManager::accountID() == 1
+    return editor && editor->m_level && GoldenCoin::isOnGdps()
+        && GoldenCoin::accountID() == 1
         && static_cast<int>(editor->m_level->m_originalLevel) == 0;
 }
 bool containsCoin(gd::string const& levelString) {
@@ -27,7 +26,7 @@ bool containsCoin(gd::string const& levelString) {
         if (binary) {
             auto compressed = binary.unwrap();
             unsigned char* inflated = nullptr;
-            int length = cocos2d::ZipUtils::ccInflateMemory(
+            int length = cocos2d::ZipGoldenCoin::ccInflateMemory(
                 reinterpret_cast<unsigned char*>(compressed.data()),
                 static_cast<unsigned int>(compressed.size()), &inflated);
             if (length > 0 && length < 32 * 1024 * 1024 && inflated)
@@ -43,7 +42,7 @@ bool containsCoin(gd::string const& levelString) {
 class $modify(OwnerGoldCoinSprite, CCSprite) {
     void setDisplayFrame(CCSpriteFrame* frame) {
         auto* object = typeinfo_cast<GameObject*>(this);
-        if (frame && object && Utils::isOnGdps()
+        if (frame && object && GoldenCoin::isOnGdps()
             && (object->m_objectID == 142 || object->getUserObject("owner-gold-object"_spr))) {
             for (int i = 1; i <= 4; ++i) {
                 auto suffix = fmt::format("_00{}.png", i);
@@ -68,7 +67,7 @@ class $modify(OwnerGoldCoinObject, GameObject) {
 public:
     void customSetup() {
         GameObject::customSetup();
-        if (Utils::isOnGdps() && (m_objectID == 142 || m_fields->originalID == 142)) {
+        if (GoldenCoin::isOnGdps() && (m_objectID == 142 || m_fields->originalID == 142)) {
             if (auto* frame = CCSpriteFrameCache::get()->spriteFrameByName("secretCoin_01_001.png"))
                 setDisplayFrame(frame);
             setColor(ccWHITE);
@@ -94,7 +93,7 @@ public:
     }
 
     void playDestroyObjectAnim(GJBaseGameLayer* layer) {
-        if (m_objectID == 142 && Utils::isOnGdps()) {
+        if (m_objectID == 142 && GoldenCoin::isOnGdps()) {
             if (auto* play = typeinfo_cast<PlayLayer*>(layer)) {
                 if (!play->m_isPracticeMode) {
                     auto* index = typeinfo_cast<CCInteger*>(getUserObject("owner-gold-index"_spr));
@@ -129,7 +128,7 @@ public:
         gd::vector<void*>& present, GJBaseGameLayer* layer, bool lowDetail) {
         auto* object = GameObject::objectFromVector(values, present, layer, lowDetail);
         auto* play = typeinfo_cast<PlayLayer*>(layer);
-        bool playCoin = play && play->m_level && Utils::isOnGdps()
+        bool playCoin = play && play->m_level && GoldenCoin::isOnGdps()
             && static_cast<int>(play->m_level->m_originalLevel) == 0;
         if (!object || object->m_objectID != 142 || (!ownerCoinEditor(layer) && !playCoin)) return object;
         auto* hooked = static_cast<OwnerGoldCoinObject*>(object);
@@ -159,7 +158,7 @@ public:
 
 class $modify(OwnerGoldCoinLevelEditor, LevelEditorLayer) {
     bool init(GJGameLevel* level, bool noUI) {
-        bool owner = level && Utils::isOnGdps() && SessionManager::accountID() == 1
+        bool owner = level && GoldenCoin::isOnGdps() && GoldenCoin::accountID() == 1
             && static_cast<int>(level->m_originalLevel) == 0;
         auto originalType = level ? level->m_levelType : static_cast<GJLevelType>(0);
         auto originalLocal = level && level->m_localOrSaved;
@@ -199,7 +198,7 @@ class $modify(OwnerGoldCoinPlayLayer, PlayLayer) {
         std::vector<int> collected;
         std::vector<int> displayCollected;
         int levelID = 0;
-        if (Utils::isOnGdps() && m_level && !m_isPracticeMode
+        if (GoldenCoin::isOnGdps() && m_level && !m_isPracticeMode
             && m_level->m_levelType == GJLevelType::Saved) {
             levelID = static_cast<int>(m_level->m_levelID);
             if (auto* slots = typeinfo_cast<CCArray*>(getUserObject("owner-gold-slots"_spr)))
@@ -214,7 +213,7 @@ class $modify(OwnerGoldCoinPlayLayer, PlayLayer) {
         auto* account = GJAccountManager::get();
         int accountID = static_cast<int>(account->m_accountID);
         std::string credential = account->m_GJP2;
-        std::string url = Utils::serverBaseUrl() + "/goldcoin/claim.php";
+        std::string url = GoldenCoin::serverBaseUrl() + "/goldcoin/claim.php";
         if (accountID <= 0 || credential.empty()) return;
         std::thread([levelID, accountID, credential, url, collected] {
             for (int slot : collected) {
@@ -230,7 +229,7 @@ class $modify(OwnerGoldCoinPlayLayer, PlayLayer) {
                 if (!body["ok"].asBool().unwrapOr(false)) continue;
                 int total = body["coins"].asInt().unwrapOr(-1);
                 Loader::get()->queueInMainThread([accountID, total] {
-                    if (SessionManager::accountID() == accountID && total >= 0)
+                    if (GoldenCoin::accountID() == accountID && total >= 0)
                         GameStatsManager::get()->setStatIfHigher("8", total);
                 });
             }
@@ -238,10 +237,10 @@ class $modify(OwnerGoldCoinPlayLayer, PlayLayer) {
     }
 
     bool init(GJGameLevel* level, bool useReplay, bool dontCreateObjects) {
-        bool hasCoin = level && Utils::isOnGdps()
+        bool hasCoin = level && GoldenCoin::isOnGdps()
             && static_cast<int>(level->m_originalLevel) == 0
             && containsCoin(level->m_levelString);
-        if (level && Utils::isOnGdps()) {
+        if (level && GoldenCoin::isOnGdps()) {
             std::string data = level->m_levelString.c_str();
             log::info("Owner gold coin play load: hasCoin={}, bytes={}, prefix={}",
                 hasCoin, data.size(), data.substr(0, std::min<size_t>(16, data.size())));

@@ -5,13 +5,13 @@
 #include <Geode/utils/web.hpp>
 #include <thread>
 #include <map>
-#include "../utils/Utils.hpp"
+#include "../utils/CoinContext.hpp"
 #include "../utils/GoldCoinProgress.hpp"
 using namespace geode::prelude;
 namespace {
 std::map<std::string, int> goldCoinCounts;
 std::string requestGoldCoins(int levelID) {
-    auto key = Utils::serverBaseUrl() + "/goldcoin/status.php?levelID=" + std::to_string(levelID);
+    auto key = GoldenCoin::serverBaseUrl() + "/goldcoin/status.php?levelID=" + std::to_string(levelID);
     if (goldCoinCounts.contains(key)) return key;
     goldCoinCounts[key] = -1;
     std::thread([key] {
@@ -75,12 +75,12 @@ class $modify(OwnerGoldCoinEndScreen, EndLevelLayer) {
         auto* play = PlayLayer::get();
         // The native no-coin message shares the coin row's position. Suppress
         // it at creation for every gold-coin level, regardless of its wording.
-        if (Utils::isOnGdps() && play && play->getUserObject("owner-gold-level"_spr)) return "";
+        if (GoldenCoin::isOnGdps() && play && play->getUserObject("owner-gold-level"_spr)) return "";
         return EndLevelLayer::getEndText();
     }
     void customSetup() {
         auto* play = PlayLayer::get();
-        bool gold = Utils::isOnGdps() && play && play->m_level && play->getUserObject("owner-gold-level"_spr);
+        bool gold = GoldenCoin::isOnGdps() && play && play->m_level && play->getUserObject("owner-gold-level"_spr);
         EndLevelLayer::customSetup();
         if (!gold) return;
         auto* countValue = typeinfo_cast<CCInteger*>(play->getUserObject("owner-gold-count"_spr));
@@ -130,7 +130,7 @@ class $modify(OwnerGoldCoinCell, LevelCell) {
         LevelCell::loadFromLevel(level);
         // Local editor IDs can coincide with published level IDs. Only online
         // levels should look up and display the server's gold-coin metadata.
-        if (!Utils::isOnGdps() || !level || level->m_levelType != GJLevelType::Saved
+        if (!GoldenCoin::isOnGdps() || !level || level->m_levelType != GJLevelType::Saved
             || static_cast<int>(level->m_levelID) <= 0) return;
         m_fields->key = requestGoldCoins(static_cast<int>(level->m_levelID));
         if (goldCoinCounts[m_fields->key] < 0) replaceCoinArt(this, true);
@@ -176,7 +176,7 @@ class $modify(OwnerGoldCoinCell, LevelCell) {
 class $modify(OwnerGoldCoinInfo, LevelInfoLayer) {
     struct Fields { std::string key; bool drawn = false; };
     void refreshGoldProgress() {
-        if (!m_level || !Utils::isOnGdps()) return;
+        if (!m_level || !GoldenCoin::isOnGdps()) return;
         for (int index = 1; index <= 3; ++index) {
             auto id = fmt::format("owner-gold-icon-{}", index);
             if (auto* coin = typeinfo_cast<CCSprite*>(getChildByIDRecursive(id)))
@@ -185,7 +185,7 @@ class $modify(OwnerGoldCoinInfo, LevelInfoLayer) {
     }
     bool init(GJGameLevel* level, bool challenge) {
         if (!LevelInfoLayer::init(level, challenge)) return false;
-        if (!Utils::isOnGdps() || !level || static_cast<int>(level->m_levelID) <= 0) return true;
+        if (!GoldenCoin::isOnGdps() || !level || static_cast<int>(level->m_levelID) <= 0) return true;
         m_fields->key = requestGoldCoins(static_cast<int>(level->m_levelID));
         schedule(schedule_selector(OwnerGoldCoinInfo::pollGoldCoins), .2f);
         return true;

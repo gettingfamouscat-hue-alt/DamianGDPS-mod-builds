@@ -1,8 +1,7 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/EditorUI.hpp>
 #include <alphalaneous.editortab_api/include/EditorTabAPI.hpp>
-#include "../managers/SessionManager.hpp"
-#include "../utils/Utils.hpp"
+#include "../utils/CoinContext.hpp"
 
 using namespace geode::prelude;
 
@@ -81,7 +80,7 @@ class $modify(OwnerGoldCoinEditor, EditorUI) {
     };
 
     bool selectedOwnerCoin() const {
-        return Utils::isOnGdps() && SessionManager::accountID() == 1
+        return GoldenCoin::isOnGdps() && GoldenCoin::accountID() == 1
             && m_selectedObject && m_selectedObject->m_objectID == 142;
     }
 
@@ -123,15 +122,14 @@ class $modify(OwnerGoldCoinEditor, EditorUI) {
 
     bool init(LevelEditorLayer* layer) {
         if (!EditorUI::init(layer)) return false;
-        SessionManager::refresh();
         // Hide the palette from every other account. The upload endpoint also
         // checks the authenticated account, so a modified client cannot add it.
-        if (!Utils::isOnGdps() || SessionManager::accountID() != 1) return true;
+        if (!GoldenCoin::isOnGdps() || GoldenCoin::accountID() != 1) return true;
 
         alpha::editor_tabs::addTab("owner-gold-coin"_spr, alpha::editor_tabs::BUILD,
             [this] {
                 auto* items = CCArray::create();
-                if (SessionManager::accountID() == 1 && Utils::isOnGdps()) {
+                if (GoldenCoin::accountID() == 1 && GoldenCoin::isOnGdps()) {
                     if (auto* button = this->getCreateBtn(142, 4)) items->addObject(button);
                 }
                 return EditButtonBar::create(items, {}, -1, false,
