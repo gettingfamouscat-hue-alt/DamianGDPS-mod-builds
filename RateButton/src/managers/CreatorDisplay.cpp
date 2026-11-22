@@ -24,6 +24,7 @@ Value parse(matjson::Value const& body) {
  if(body.isObject()) {
   v.name=body["displayName"].asString().unwrapOr(""); v.color=body["color"].asString().unwrapOr("00FF00");
   v.clickable=body["clickable"].asBool().unwrapOr(false);
+  v.badges=static_cast<int>(body["badges"].asInt().unwrapOr(0));
  }
  return v;
 }
@@ -37,6 +38,9 @@ std::string encode(std::string const& s) {
 }
 }
 void State::restore() {
+ if(plusBadge) plusBadge->removeFromParent();
+ if(creatorBadge) creatorBadge->removeFromParent();
+ plusBadge=nullptr; creatorBadge=nullptr;
  if(applied && label) { label->setString(original.c_str()); label->setPosition(position); label->setColor(color); }
  if(applied && button) button->setEnabled(enabled);
  applied=false; label=nullptr; button=nullptr;
@@ -71,7 +75,7 @@ void apply(CCNode* root,int id,State& state,bool leftAlign) {
  if(state.original.starts_with("By ")) name="By "+name;
  else if(state.original.starts_with("BY "))name="BY "+name;
  if(button)button->setEnabled(v.clickable);
- label->setString(name.c_str());
+ if(std::string(label->getString())!=name) label->setString(name.c_str());
  // BMFont changes its size without moving the sprite inside the native button.
  // Preserve the original left edge instead of centering a shorter alias in the old width.
  auto position=state.position;
@@ -96,13 +100,26 @@ void apply(CCNode* root,int id,State& state,bool leftAlign) {
    }
   }
  }
+ auto placeBadge=[&](int bit, geode::Ref<CCSprite>& sprite, char const* filename, int offset) {
+  if(!(v.badges&bit)) { if(sprite) sprite->removeFromParent(); sprite=nullptr; return; }
+  if(!sprite || sprite->getParent()!=label) {
+   sprite=CCSprite::create(filename);
+   if(!sprite) return;
+   label->addChild(sprite);
+  }
+  sprite->setScale(15.f/sprite->getContentSize().width);
+  sprite->setPosition({label->getContentSize().width+10.f+offset,label->getContentSize().height/2});
+ };
+ placeBadge(1,state.plusBadge,"creator-plus.png"_spr,0);
+ placeBadge(2,state.creatorBadge,"creator-c.png"_spr,(v.badges&1)?18:0);
 }
 void save(int id,Value value,std::function<void(bool,std::string)> done) {
  if(!SessionManager::canManageRoles()){done(false,"Only the server owner can edit creator displays.");return;}
  auto* am=GJAccountManager::sharedState();int account=am->m_accountID;
  std::string credential=am->m_GJP2,server=Utils::serverBaseUrl();auto k=key(id);
  auto body="accountID="+std::to_string(account)+"&gjp2="+encode(credential)+"&levelID="+std::to_string(id)
-  +"&displayName="+encode(value.name)+"&color="+encode(value.color)+"&clickable="+(value.clickable?"1":"0");
+  +"&displayName="+encode(value.name)+"&color="+encode(value.color)+"&clickable="+(value.clickable?"1":"0")
+  +"&badges="+std::to_string(value.badges);
  std::thread([account,credential,server,k,body,done=std::move(done)]() mutable {
   auto req=web::WebRequest();req.header("Content-Type","application/x-www-form-urlencoded");req.bodyString(body);
   req.timeout(std::chrono::seconds(8));auto res=req.postSync(server+"/creator/set.php");

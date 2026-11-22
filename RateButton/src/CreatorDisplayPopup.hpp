@@ -5,7 +5,8 @@
 using namespace geode::prelude;
 class CreatorDisplayPopup : public Popup {
  int levelID=0; TextInput* name=nullptr; TextInput* color=nullptr;
- CCMenuItemToggler* clickable=nullptr; CCLabelBMFont* preview=nullptr;
+ CCMenuItemToggler* clickable=nullptr; CCMenuItemToggler* plusBadge=nullptr; CCMenuItemToggler* creatorBadge=nullptr;
+ CCLabelBMFont* preview=nullptr; CCSprite* previewPlus=nullptr; CCSprite* previewC=nullptr;
  void updatePreview(float=0) {
   if(!preview)return;
   auto value=std::string(name->getString()); if(value.empty())value="Your name";
@@ -21,6 +22,9 @@ class CreatorDisplayPopup : public Popup {
     g->setColor({static_cast<GLubyte>(a.r+(b.r-a.r)*t),static_cast<GLubyte>(a.g+(b.g-a.g)*t),static_cast<GLubyte>(a.b+(b.b-a.b)*t)});++i;
    }
   }
+  auto right=195.f+preview->getContentSize().width*preview->getScaleX()/2+10.f;
+  if(previewPlus){previewPlus->setVisible(plusBadge&&plusBadge->isToggled());previewPlus->setPosition({right,83});}
+  if(previewC){previewC->setVisible(creatorBadge&&creatorBadge->isToggled());previewC->setPosition({right+(plusBadge&&plusBadge->isToggled()?19.f:0.f),83});}
  }
  bool init(int id) {
   if(!Popup::init(390.f,330.f))return false;levelID=id;setTitle("Creator Display");auto v=CreatorDisplay::cached(id);
@@ -39,9 +43,21 @@ class CreatorDisplayPopup : public Popup {
   add("Purple > Red","#8A2BE2 > #FF3030",78,0);
   add("Yellow","#FFFF00",195,1);add("Green","#00FF00",310,2);
   preview=CCLabelBMFont::create("Your name","bigFont.fnt");preview->setScale(.55f);preview->setPosition({195,83});m_mainLayer->addChild(preview);
+  auto addPreviewBadge=[this](char const* image)->CCSprite* {
+   auto* icon=CCSprite::create(image);if(!icon)return nullptr;
+   icon->setScale(16.f/icon->getContentSize().width);m_mainLayer->addChild(icon);return icon;
+  };
+  previewPlus=addPreviewBadge("creator-plus.png"_spr);
+  previewC=addPreviewBadge("creator-c.png"_spr);
   clickable=CCMenuItemToggler::createWithStandardSprites(this,menu_selector(CreatorDisplayPopup::onToggle),.6f);
-  clickable->toggle(v.clickable);clickable->setPosition({105,54});m_buttonMenu->addChild(clickable);
-  text("Clickable profile",54);
+  clickable->toggle(v.clickable);clickable->setPosition({36,54});m_buttonMenu->addChild(clickable);
+  auto* clickLabel=CCLabelBMFont::create("Clickable","bigFont.fnt");clickLabel->setScale(.3f);clickLabel->setPosition({108,54});m_mainLayer->addChild(clickLabel);
+  plusBadge=CCMenuItemToggler::createWithStandardSprites(this,menu_selector(CreatorDisplayPopup::onToggle),.6f);
+  plusBadge->toggle((v.badges&1)!=0);plusBadge->setPosition({210,54});m_buttonMenu->addChild(plusBadge);
+  creatorBadge=CCMenuItemToggler::createWithStandardSprites(this,menu_selector(CreatorDisplayPopup::onToggle),.6f);
+  creatorBadge->toggle((v.badges&2)!=0);creatorBadge->setPosition({295,54});m_buttonMenu->addChild(creatorBadge);
+  auto* plusIcon=addPreviewBadge("creator-plus.png"_spr);if(plusIcon)plusIcon->setPosition({237,54});
+  auto* creatorIcon=addPreviewBadge("creator-c.png"_spr);if(creatorIcon)creatorIcon->setPosition({322,54});
   auto* save=CCMenuItemSpriteExtra::create(ButtonSprite::create("Save"),this,menu_selector(CreatorDisplayPopup::onSave));save->setScale(.75f);save->setPosition({195,24});m_buttonMenu->addChild(save);
   schedule(schedule_selector(CreatorDisplayPopup::updatePreview),.15f);updatePreview();return true;
  }
@@ -52,7 +68,8 @@ class CreatorDisplayPopup : public Popup {
   default:color->setString("00FF00");break;
  }updatePreview();}
  void onSave(CCObject*) {
-  CreatorDisplay::Value v{std::string(name->getString()),std::string(color->getString()),clickable->isToggled()};
+  CreatorDisplay::Value v{std::string(name->getString()),std::string(color->getString()),clickable->isToggled(),
+   (plusBadge->isToggled()?1:0)|(creatorBadge->isToggled()?2:0)};
   CreatorDisplay::save(levelID,v,[](bool ok,std::string message){FLAlertLayer::create(ok?"Saved":"Save failed",message.c_str(),"OK")->show();});onClose(nullptr);
  }
 public:

@@ -6,6 +6,7 @@
 #include <Geode/modify/CreatorLayer.hpp>
 #include <Geode/utils/web.hpp>
 #include "../managers/VersusManager.hpp"
+#include "../MapLayer.hpp"
 
 #include <chrono>
 #include <functional>
@@ -205,6 +206,41 @@ namespace {
         if (auto* spr = btn->getNormalImage())
             restoreFullColor(spr);
     }
+
+    CCMenuItemSpriteExtra* findMapButton(CCNode* root) {
+        if (!root) return nullptr;
+        std::function<bool(CCNode*)> containsMapSprite;
+        containsMapSprite = [&](CCNode* node) {
+            if (!node) return false;
+            if (spriteFrameName(node) == "GJ_mapBtn_001.png") return true;
+            if (auto* children = node->getChildren())
+                for (auto* child : CCArrayExt<CCNode*>(children))
+                    if (containsMapSprite(child)) return true;
+            return false;
+        };
+        std::function<CCMenuItemSpriteExtra*(CCNode*)> walk;
+        walk = [&](CCNode* node) -> CCMenuItemSpriteExtra* {
+            if (auto* button = typeinfo_cast<CCMenuItemSpriteExtra*>(node)) {
+                auto* image = button->getNormalImage();
+                if (std::string(button->getID()) == "map-button" ||
+                    std::string(button->getID()) == "adventure-map-button" ||
+                    containsMapSprite(image) || containsMapSprite(button)) return button;
+            }
+            if (auto* children = node->getChildren())
+                for (auto* child : CCArrayExt<CCNode*>(children))
+                    if (auto* found = walk(child)) return found;
+            return nullptr;
+        };
+        return walk(root);
+    }
+
+    void enableMapButton(CCNode* root) {
+        auto* button = findMapButton(root);
+        if (!button) { log::warn("Map tile was not found"); return; }
+        button->setEnabled(true);
+        restoreFullColor(button);
+        if (auto* image = button->getNormalImage()) restoreFullColor(image);
+    }
 }
 
 class $modify(VersusCreatorLayer, CreatorLayer) {
@@ -212,12 +248,18 @@ class $modify(VersusCreatorLayer, CreatorLayer) {
         if (!CreatorLayer::init())
             return false;
         enableVersusButton(this);
+        enableMapButton(this);
         return true;
     }
 
     void sceneWillResume() {
         CreatorLayer::sceneWillResume();
         enableVersusButton(this);
+        enableMapButton(this);
+    }
+
+    void onAdventureMap(CCObject*) {
+        CCDirector::sharedDirector()->pushScene(DamianMapLayer::scene());
     }
 
     void onMultiplayer(CCObject* sender) {

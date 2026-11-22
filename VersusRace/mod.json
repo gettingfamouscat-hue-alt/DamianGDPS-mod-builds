@@ -8,9 +8,9 @@
     },
     "id": "damian.versus",
     "name": "Damian Versus",
-    "version": "v1.0.10",
+    "version": "v1.1.3",
     "developer": "Damian GDPS",
-    "description": "Makes the Versus tab work: find a match, 3-life race, live % overlay.",
+    "description": "GDPS Versus races and an unlockable Map of GDPS levels.",
     "tags": [
         "online",
         "utility",
