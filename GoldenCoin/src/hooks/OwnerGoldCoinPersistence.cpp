@@ -26,7 +26,7 @@ bool containsCoin(gd::string const& levelString) {
         if (binary) {
             auto compressed = binary.unwrap();
             unsigned char* inflated = nullptr;
-            int length = cocos2d::ZipGoldenCoin::ccInflateMemory(
+            int length = cocos2d::ZipUtils::ccInflateMemory(
                 reinterpret_cast<unsigned char*>(compressed.data()),
                 static_cast<unsigned int>(compressed.size()), &inflated);
             if (length > 0 && length < 32 * 1024 * 1024 && inflated)

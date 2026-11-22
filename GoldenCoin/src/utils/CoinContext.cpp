@@ -12,8 +12,10 @@ int GoldenCoin::accountID() {
 std::string GoldenCoin::serverBaseUrl() {
     auto url = Mod::get()->getSettingValue<std::string>("server-url");
     if (url.empty()) {
-        if (auto* previous = Loader::get()->getLoadedMod("m336.rate-button"))
-            url = previous->getSettingValue<std::string>("server-url");
+        if (auto* previous = Loader::get()->getLoadedMod("m336.rate-button")) {
+            if (previous->hasSetting("server-url"))
+                url = previous->getSettingValue<std::string>("server-url");
+        }
     }
     if (url.empty() && Loader::get()->isModLoaded("km7dev.server_api")) {
         auto current = ServerAPIEvents::getCurrentServer().url;
