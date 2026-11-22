@@ -121,13 +121,17 @@ class $modify(OwnerGoldCoinEndScreen, EndLevelLayer) {
 class $modify(OwnerGoldCoinCell, LevelCell) {
     struct Fields { std::string key; bool logged = false; Ref<CCNode> row; int count = 0; };
     void loadFromLevel(GJGameLevel* level) {
+        unschedule(schedule_selector(OwnerGoldCoinCell::refreshGoldArt));
         if (m_fields->row) m_fields->row->removeFromParent();
         m_fields->row = nullptr;
         m_fields->count = 0;
         m_fields->key.clear();
         m_fields->logged = false;
         LevelCell::loadFromLevel(level);
-        if (!Utils::isOnGdps() || !level || static_cast<int>(level->m_levelID) <= 0) return;
+        // Local editor IDs can coincide with published level IDs. Only online
+        // levels should look up and display the server's gold-coin metadata.
+        if (!Utils::isOnGdps() || !level || level->m_levelType != GJLevelType::Saved
+            || static_cast<int>(level->m_levelID) <= 0) return;
         m_fields->key = requestGoldCoins(static_cast<int>(level->m_levelID));
         if (goldCoinCounts[m_fields->key] < 0) replaceCoinArt(this, true);
         else if (goldCoinCounts[m_fields->key] > 0) replaceCoinArt(this, true);
@@ -135,7 +139,7 @@ class $modify(OwnerGoldCoinCell, LevelCell) {
         schedule(schedule_selector(OwnerGoldCoinCell::refreshGoldArt), .05f);
     }
     void refreshGoldArt(float) {
-        if (m_fields->key.empty()) return;
+        if (m_fields->key.empty() || !m_level || m_level->m_levelType != GJLevelType::Saved) return;
         if (!m_fields->logged && goldCoinCounts[m_fields->key] >= 0) {
             log::info("Gold coin list status: {} = {}", m_fields->key, goldCoinCounts[m_fields->key]);
             m_fields->logged = true;
