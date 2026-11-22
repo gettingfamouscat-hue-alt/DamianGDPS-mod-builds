@@ -71,15 +71,12 @@ void replaceCoinArt(CCNode* node, bool pending = false) {
         for (auto* child : CCArrayExt<CCNode*>(children)) replaceCoinArt(child, pending);
 }
 class $modify(OwnerGoldCoinEndScreen, EndLevelLayer) {
-    void hideNoCoinMessage(CCNode* node) {
-        if (node->getID() == "owner-gold-row"_spr) return;
-        if (auto* label = typeinfo_cast<CCLabelBMFont*>(node)) {
-            std::string text = label->getString();
-            std::transform(text.begin(), text.end(), text.begin(), [](unsigned char c) { return std::tolower(c); });
-            if (text.find("speechless") != std::string::npos) label->setVisible(false);
-        }
-        if (auto* children = node->getChildren())
-            for (auto* child : CCArrayExt<CCNode*>(children)) hideNoCoinMessage(child);
+    char const* getEndText() {
+        auto* play = PlayLayer::get();
+        // The native no-coin message shares the coin row's position. Suppress
+        // it at creation for every gold-coin level, regardless of its wording.
+        if (Utils::isOnGdps() && play && play->getUserObject("owner-gold-level"_spr)) return "";
+        return EndLevelLayer::getEndText();
     }
     void customSetup() {
         auto* play = PlayLayer::get();
@@ -90,7 +87,6 @@ class $modify(OwnerGoldCoinEndScreen, EndLevelLayer) {
         int count = std::clamp(countValue ? countValue->getValue() : play->m_level->m_coins, 0, 3);
         if (!count) return;
         replaceCoinArt(this, true);
-        hideNoCoinMessage(this);
         bool collected[4] = {};
         if (auto* touched = typeinfo_cast<CCArray*>(play->getUserObject("owner-gold-collected"_spr))) {
             for (auto* value : CCArrayExt<CCInteger*>(touched)) {
@@ -109,7 +105,7 @@ class $modify(OwnerGoldCoinEndScreen, EndLevelLayer) {
             float scale = 32.f / coin->getContentSize().width;
             coin->setScale(scale);
             coin->setColor(collected[index] ? ccWHITE : ccColor3B{90,90,90});
-            coin->setPosition({(index - 1 - (count - 1) / 2.f) * 38.f, 0.f});
+            coin->setPosition({(index - 1 - (count - 1) / 2.f) * 30.f, 0.f});
             row->addChild(coin);
             if (collected[index]) {
                 coin->setScale(scale * .65f);
@@ -119,7 +115,7 @@ class $modify(OwnerGoldCoinEndScreen, EndLevelLayer) {
         }
         schedule(schedule_selector(OwnerGoldCoinEndScreen::refreshEndCoins), .05f);
     }
-    void refreshEndCoins(float) { replaceCoinArt(this, true); hideNoCoinMessage(this); }
+    void refreshEndCoins(float) { replaceCoinArt(this, true); }
 };
 }
 class $modify(OwnerGoldCoinCell, LevelCell) {
@@ -157,8 +153,8 @@ class $modify(OwnerGoldCoinCell, LevelCell) {
             addChild(row, 50);
             for (int i = 0; i < count; ++i) {
                 auto* coin = CCSprite::createWithSpriteFrameName("GJ_coinsIcon_001.png");
-                coin->setScale(11.f / coin->getContentSize().width);
-                coin->setPosition({(i - (count - 1) / 2.f) * 12.f, 0.f});
+                coin->setScale(12.f / coin->getContentSize().width);
+                coin->setPosition({(i - (count - 1) / 2.f) * 10.f, 0.f});
                 row->addChild(coin, 0, i + 1);
             }
         }
@@ -218,7 +214,7 @@ class $modify(OwnerGoldCoinInfo, LevelInfoLayer) {
             if (!coin) continue;
             coin->setID(fmt::format("owner-gold-icon-{}", i + 1));
             coin->setScale(13.f / coin->getContentSize().width);
-            coin->setPosition(position + CCPoint{14.f * (i - (count - 1) / 2.f), 0.f});
+            coin->setPosition(position + CCPoint{11.f * (i - (count - 1) / 2.f), 0.f});
             coin->setColor(GoldCoinProgress::collected(m_level, i + 1) ? ccWHITE : ccColor3B{105,105,105});
             parent->addChild(coin, 20);
         }
