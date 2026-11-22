@@ -105,6 +105,7 @@ void apply(CCNode* root,int id,State& state,bool leftAlign) {
   if(!sprite || sprite->getParent()!=label) {
    sprite=CCSprite::create(filename);
    if(!sprite) return;
+   trimBadge(sprite, bit == 1);
    label->addChild(sprite);
   }
   sprite->setScale(15.f/sprite->getContentSize().width);

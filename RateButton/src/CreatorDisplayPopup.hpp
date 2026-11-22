@@ -45,6 +45,7 @@ class CreatorDisplayPopup : public Popup {
   preview=CCLabelBMFont::create("Your name","bigFont.fnt");preview->setScale(.55f);preview->setPosition({195,83});m_mainLayer->addChild(preview);
   auto addPreviewBadge=[this](char const* image)->CCSprite* {
    auto* icon=CCSprite::create(image);if(!icon)return nullptr;
+   CreatorDisplay::trimBadge(icon, std::string(image).find("creator-plus") != std::string::npos);
    icon->setScale(16.f/icon->getContentSize().width);m_mainLayer->addChild(icon);return icon;
   };
   previewPlus=addPreviewBadge("creator-plus.png"_spr);

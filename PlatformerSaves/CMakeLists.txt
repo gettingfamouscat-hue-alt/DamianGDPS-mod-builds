@@ -53,8 +53,9 @@ else()
     message(STATUS "Found Geode: $ENV{GEODE_SDK}")
 endif()
 
-target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-microsoft-include")
-target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-invalid-offsetof")
+if (NOT MSVC)
+    target_compile_options(${PROJECT_NAME} PRIVATE "-Wno-microsoft-include" "-Wno-invalid-offsetof")
+endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE src/)
 

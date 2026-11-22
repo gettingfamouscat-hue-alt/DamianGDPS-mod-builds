@@ -143,31 +143,57 @@ void PSPlayLayer::postUpdate(float i_unkFloat) {
         m_attempts = m_fields->m_loadedAttempts;
     }
 
-    m_fields->m_inPostUpdate = false;
-    m_fields->m_triedPlacingCheckpoint = false;
-}
-
-CheckpointObject* PSPlayLayer::markCheckpoint() {
-    PSCheckpointObject* l_checkpointObject = static_cast<PSCheckpointObject*>(PlayLayer::markCheckpoint());
-
-    if (l_checkpointObject && savesEnabled() && !m_isPracticeMode) {
-        if (m_fields->m_triedPlacingCheckpoint) {
-            m_fields->m_triedPlacingCheckpoint = false;
-        } else if (m_activatedCheckpoint != nullptr) {
-            //log::info("[markCheckpoint] triggered checkpoint");
-            l_checkpointObject->m_fields->m_timePlayed = m_timePlayed;
-            l_checkpointObject->m_fields->m_timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-            m_fields->m_normalModeCheckpoints->addObject(l_checkpointObject);
-            m_fields->m_activatedCheckpoints.push_back(CheckpointGameObjectReference(m_activatedCheckpoint));
-            // autosave
-            if (Mod::get()->getSettingValue<bool>("auto-save")) {
-                //log::info("[markCheckpoint] autosave triggered");
+    if (m_isPlatformer && savesEnabled() && !m_isPracticeMode && !m_isPaused &&
+        !m_hasCompletedLevel && m_player1 && !m_player1->m_isDead &&
+        m_fields->m_loadingState == LoadingState::Ready &&
+        m_fields->m_savingState == SavingState::Ready) {
+        m_fields->m_timedSaveElapsed += i_unkFloat;
+        if (m_fields->m_timedSaveElapsed >= 5.0f) {
+            m_fields->m_timedSaveElapsed = 0.0f;
+            if (captureTimedSnapshot() && Mod::get()->getSettingValue<bool>("auto-save")) {
                 startSaveGame();
             }
         }
     }
 
-    return l_checkpointObject;
+    m_fields->m_inPostUpdate = false;
+    m_fields->m_triedPlacingCheckpoint = false;
+}
+
+CheckpointObject* PSPlayLayer::markCheckpoint() {
+    // Real checkpoints still work in the level, but saving is driven by time.
+    return PlayLayer::markCheckpoint();
+}
+
+bool PSPlayLayer::captureTimedSnapshot() {
+    if (!m_player1 || !m_checkpointArray || !m_fields->m_normalModeCheckpoints) return false;
+    auto* snapshot = static_cast<PSCheckpointObject*>(PlayLayer::createCheckpoint());
+    if (!snapshot) return false;
+
+    // The save format expects a physical checkpoint even when the level has none.
+    auto* marker = GameObject::createWithFrame("square_01_001.png");
+    if (!marker) return false;
+    marker->m_objectID = 0x2c;
+    marker->m_objectType = GameObjectType::Decoration;
+    marker->m_glowSprite = nullptr;
+    marker->m_isDisabled2 = true;
+    marker->m_isInvisible = true;
+    marker->setOpacity(0);
+    marker->setStartPos(m_player1->getPosition());
+    CC_SAFE_RETAIN(marker);
+    CC_SAFE_RELEASE(snapshot->m_physicalCheckpointObject);
+    snapshot->m_physicalCheckpointObject = marker;
+    snapshot->m_fields->m_position = m_player1->getPosition();
+    snapshot->m_fields->m_timePlayed = m_timePlayed;
+    snapshot->m_fields->m_timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+
+    m_fields->m_normalModeCheckpoints->removeAllObjects();
+    m_fields->m_normalModeCheckpoints->addObject(snapshot);
+    m_checkpointArray->removeAllObjects();
+    m_checkpointArray->addObject(snapshot);
+    PlayLayer::addToSection(marker);
+    return true;
 }
 
 void PSPlayLayer::resetLevel() {

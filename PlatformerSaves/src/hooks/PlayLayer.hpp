@@ -90,6 +90,7 @@ public:
         util::platform::PSPlatform m_platform;
         util::platform::PSPlatform m_readPlatform;
         long long m_lastSavedCheckpointTimestamp = 0;
+        float m_timedSaveElapsed = 0.0f;
         persistenceAPI::Stream m_stream;
         persistenceAPI::Stream m_backupStream;
         LoadingState m_loadingState = LoadingState::Setup;
@@ -146,6 +147,8 @@ public:
     // custom methods
 
     void registerCheckpointsAndActivatedCheckpoints();
+
+    bool captureTimedSnapshot();
 
     bool readPSFVersionAndUpdateIfNecessary();
 

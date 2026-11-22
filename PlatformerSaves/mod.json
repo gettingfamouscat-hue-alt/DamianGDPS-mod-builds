@@ -6,7 +6,7 @@
 		"mac": "2.2081",
 		"ios": "2.2081"
 	},
-	"version": "v1.2.2",
+	"version": "v1.3.0",
 	"id": "sabe.platformersaves",
 	"name": "PlatformerSaves",
 	"developer": "Sabe",
@@ -35,7 +35,7 @@
 		"auto-save": {
 			"default": true,
 			"name": "Autosave",
-			"description": "Automatically saves the game when reaching a new checkpoint.",
+			"description": "Automatically saves your current platformer progress every 5 seconds, even in levels without checkpoints.",
 			"type": "bool"
 		},
 		"editor-saves": {
