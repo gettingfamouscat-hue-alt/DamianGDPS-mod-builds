@@ -190,9 +190,9 @@ bool PSPlayLayer::captureTimedSnapshot() {
 
     m_fields->m_normalModeCheckpoints->removeAllObjects();
     m_fields->m_normalModeCheckpoints->addObject(snapshot);
-    m_checkpointArray->removeAllObjects();
-    m_checkpointArray->addObject(snapshot);
-    PlayLayer::addToSection(marker);
+    // Keep the snapshot out of the live level's checkpoint and visibility
+    // structures. It only needs to be serialized; loadGame registers the
+    // restored marker when the player chooses Continue.
     return true;
 }
 
