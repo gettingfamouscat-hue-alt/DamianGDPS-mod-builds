@@ -7,12 +7,9 @@
     },
     "id": "damian.half-block-tab",
     "name": "Classic Half Blocks",
-    "version": "v1.0.1",
+    "version": "v1.0.11",
     "developer": "Damian GDPS",
-    "description": "Restores classic half blocks and closes the visible fill seams.",
-    "resources": {
-        "files": ["resources/seamless-plank-fill.png"]
-    },
+    "description": "Restores classic half blocks in the editor.",
     "dependencies": {
         "alphalaneous.editortab_api": ">=v2.1.13"
     },
