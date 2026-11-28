@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 project(DamianModPorts LANGUAGES CXX)
+set_property(GLOBAL PROPERTY JOB_POOLS port_compile=4)
+set(CMAKE_JOB_POOL_COMPILE port_compile)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT Embedded)

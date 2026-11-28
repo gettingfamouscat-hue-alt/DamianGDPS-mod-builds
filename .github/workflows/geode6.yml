@@ -29,7 +29,7 @@ jobs:
           path: Geode6
           target: ${{ matrix.target }}
           sdk: '6.0.0'
-          cli: '4.0.2'
+          cli: 'v4.0.2'
           bindings-ref: 42c3eed43010fa531e9bc5d0aca6f3c3c4f49608
           use-lto: false
       - uses: actions/upload-artifact@v7
