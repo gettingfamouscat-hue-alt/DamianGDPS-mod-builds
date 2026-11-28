@@ -3,10 +3,15 @@
 #include "../managers/SessionManager.hpp"
 #include "../utils/SearchFilters.hpp"
 #include "../utils/Utils.hpp"
+#include "../managers/GauntletNames.hpp"
 
 using namespace geode::prelude;
 
 class $modify(GameLevelManager) {
+    void onGetGauntletsCompleted(std::string response, std::string tag) {
+        GauntletNames::read(response);
+        GameLevelManager::onGetGauntletsCompleted(response, tag);
+    }
     // Inject GDPS Impossible / Very Easy search params before the request leaves.
     void ProcessHttpRequest(
         std::string endpoint,

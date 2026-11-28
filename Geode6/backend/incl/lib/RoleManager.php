@@ -24,6 +24,8 @@ class RoleManager {
         $send = $active && ($rate || $this->gs->checkPermission($accountID, 'actionSuggestRating'));
         return [
             'accountID' => $accountID,
+            'canCreateLists' => (bool)$active,
+            'canManageGauntlets' => (bool)($active && (int)$account['isAdmin'] === 1),
             'canRate' => (bool)$rate,
             'canSetDemon' => (bool)($rate && (int)$account['isAdmin'] === 1),
             'canSuggest' => (bool)$send,
