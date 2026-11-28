@@ -103,8 +103,8 @@ void DevRateStarsPopup::onNumber(CCObject* sender) {
     m_chosen = true;
     if (!m_customChosen) m_customStars = -1;
     m_selectedStars = static_cast<CCNode*>(sender)->getTag();
+    if (m_selectedStars == 10) m_demonDiff = 2;
     updateDifficultyVisuals(); updateSubmit();
-    if (m_selectedStars == 10 && SessionManager::isElderMod()) openDemonSwitchPopup();
 }
 void DevRateStarsPopup::onDemon(CCObject* sender) {
     if (!m_loaded || m_pending) return;
