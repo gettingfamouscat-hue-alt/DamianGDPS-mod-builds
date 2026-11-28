@@ -14,6 +14,8 @@ class FeaturedOrderPopup : public Popup {
     void onFire(CCObject*);
     void onSubmit(CCObject*);
     void onCancel(CCObject*);
+    void onDaily(CCObject*);
+    void onWeekly(CCObject*);
 public:
     static FeaturedOrderPopup* create(int level);
 };

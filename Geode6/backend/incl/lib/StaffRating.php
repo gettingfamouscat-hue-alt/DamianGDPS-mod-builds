@@ -64,6 +64,8 @@ final class StaffRating {
             $this->db->commit();
             return ['ok' => true, 'levelID' => $id, 'stars' => (int)$level['starStars'],
                 'coins' => (int)$level['starCoins'],
+                'difficulty' => (int)$level['starDifficulty'], 'demon' => (int)$level['starDemon'],
+                'auto' => (int)$level['starAuto'], 'subtype' => (int)$level['starDemonDiff'],
                 'order' => ((int)$level['starFeatured'] || (int)$level['starEpic']) ? max(1, (int)($level['featuredOrder'] ?? 0)) : 0,
                 'tier' => (int)$level['starEpic'] ? (int)$level['starEpic'] + 1 : ((int)$level['starFeatured'] ? 1 : 0)];
         } catch (Throwable $e) {

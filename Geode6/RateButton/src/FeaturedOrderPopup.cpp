@@ -2,6 +2,7 @@
 #include "CustomStarsPopup.hpp"
 #include "managers/StaffRatingClient.hpp"
 #include "managers/SessionManager.hpp"
+#include "managers/SettingsManager.hpp"
 #include <algorithm>
 #include <limits>
 bool FeaturedOrderPopup::init(int level) {
@@ -33,6 +34,14 @@ bool FeaturedOrderPopup::init(int level) {
     cancel->setScale(.7f); m_submit->setScale(.7f);
     cancel->setPosition({135.f, 25.f}); m_submit->setPosition({265.f, 25.f});
     m_buttonMenu->addChild(cancel); m_buttonMenu->addChild(m_submit); update();
+    if (SettingsManager::ShowDailyButton) {
+        auto* b = CCMenuItemSpriteExtra::create(ButtonSprite::create("Daily"), this, menu_selector(FeaturedOrderPopup::onDaily));
+        b->setScale(.45f); b->setPosition({43.f, 60.f}); m_buttonMenu->addChild(b);
+    }
+    if (SettingsManager::ShowWeeklyButton) {
+        auto* b = CCMenuItemSpriteExtra::create(ButtonSprite::create("Weekly"), this, menu_selector(FeaturedOrderPopup::onWeekly));
+        b->setScale(.45f); b->setPosition({355.f, 60.f}); m_buttonMenu->addChild(b);
+    }
     auto weak = WeakRef(this);
     StaffRatingClient::request(level, "read", {}, [weak](bool ok, std::string error, matjson::Value body) {
         auto self = weak.lock(); if (!self) return;
@@ -81,6 +90,14 @@ void FeaturedOrderPopup::onSubmit(CCObject*) {
         });
 }
 void FeaturedOrderPopup::onCancel(CCObject*) { onClose(nullptr); }
+void FeaturedOrderPopup::onDaily(CCObject*) {
+    if (!SessionManager::isElderMod()) return;
+    GameLevelManager::sharedState()->uploadComment("!daily", CommentType::Level, m_level, 0); onClose(nullptr);
+}
+void FeaturedOrderPopup::onWeekly(CCObject*) {
+    if (!SessionManager::isElderMod()) return;
+    GameLevelManager::sharedState()->uploadComment("!weekly", CommentType::Level, m_level, 0); onClose(nullptr);
+}
 FeaturedOrderPopup* FeaturedOrderPopup::create(int level) {
     auto* p = new FeaturedOrderPopup(); if (p->init(level)) { p->autorelease(); return p; } delete p; return nullptr;
 }

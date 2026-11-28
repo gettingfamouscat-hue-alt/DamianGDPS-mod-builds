@@ -18,6 +18,8 @@ protected:
 
     int m_levelId = 0;
     bool m_pending = false;
+    bool m_loaded = false, m_chosen = false, m_customChosen = false;
+    void updateSubmit();
     std::vector<CCMenuItemSpriteExtra*> m_numberButtons, m_demonButtons;
     CCMenuItemSpriteExtra* m_submitButton = nullptr;
     void onNumber(CCObject*);

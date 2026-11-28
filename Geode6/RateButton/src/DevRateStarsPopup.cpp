@@ -81,18 +81,53 @@ bool DevRateStarsPopup::init(int levelId) {
     cancel->setScale(.7f); submit->setScale(.7f);
     cancel->setPosition({155.f, 25.f}); submit->setPosition({275.f, 25.f});
     m_buttonMenu->addChild(cancel); m_buttonMenu->addChild(submit); m_submitButton = submit;
+    if (elder && SettingsManager::ShowSendOnlyButton) {
+        auto* send = CCMenuItemSpriteExtra::create(ButtonSprite::create("Send"), this, menu_selector(DevRateStarsPopup::onSendOnly));
+        send->setScale(.4f); send->setPosition({47.f, 53.f}); m_buttonMenu->addChild(send);
+    }
     updateStarsToggleVisuals(); updateDifficultyVisuals();
     m_coinsButton->setOpacity(DISABLED_OPACITY);
+    updateSubmit();
+    auto weak = WeakRef(this);
+    StaffRatingClient::request(levelId, "read", {}, [weak](bool ok, std::string error, matjson::Value body) {
+        auto self = weak.lock(); if (!self) return;
+        if (!ok) { FLAlertLayer::create("Could not load", error, "OK")->show(); return; }
+        self->m_coinsEnabled = body["coins"].asInt().unwrapOr(0) != 0;
+        self->m_coinsButton->setOpacity(self->m_coinsEnabled ? ENABLED_OPACITY : DISABLED_OPACITY);
+        if (!self->m_chosen) {
+            int diff = static_cast<int>(body["difficulty"].asInt().unwrapOr(0));
+            int sub = static_cast<int>(body["subtype"].asInt().unwrapOr(0));
+            if (body["demon"].asInt().unwrapOr(0)) {
+                self->m_selectedStars = sub >= 8 && sub <= 13 ? sub + 3 : 10;
+                self->m_demonDiff = sub == 3 ? 0 : sub == 4 ? 1 : sub == 5 ? 3 : sub == 6 ? 4 : 2;
+            } else {
+                self->m_selectedStars = body["auto"].asInt().unwrapOr(0) ? 1 : diff == 10 ? 2 : diff == 20 ? 3 : diff == 30 ? 4 : diff == 40 ? 6 : diff == 50 ? 8 : 0;
+                self->m_easyVariant = diff == 10 && sub == 1 ? 1 : 0;
+            }
+            self->m_customStars = static_cast<int>(body["stars"].asInt().unwrapOr(0));
+        }
+        self->m_loaded = true; self->updateDifficultyVisuals(); self->updateSubmit();
+    });
     return true;
 }
 
+void DevRateStarsPopup::updateSubmit() {
+    bool enabled = m_loaded && m_chosen && !m_pending;
+    m_submitButton->setEnabled(enabled); m_submitButton->setOpacity(enabled ? 255 : 127);
+}
+
 void DevRateStarsPopup::onNumber(CCObject* sender) {
+    if (!m_loaded || m_pending) return;
+    m_chosen = true;
+    if (!m_customChosen) m_customStars = -1;
     m_selectedStars = static_cast<CCNode*>(sender)->getTag();
-    updateDifficultyVisuals();
+    updateDifficultyVisuals(); updateSubmit();
 }
 void DevRateStarsPopup::onDemon(CCObject* sender) {
+    if (!m_loaded || m_pending) return;
+    m_chosen = true;
     m_demonDiff = static_cast<CCNode*>(sender)->getTag();
-    updateDifficultyVisuals();
+    updateDifficultyVisuals(); updateSubmit();
 }
 
 int DevRateStarsPopup::starsToSubmit() const {
@@ -105,11 +140,15 @@ void DevRateStarsPopup::updateAwardLabel() {
 }
 
 void DevRateStarsPopup::onCustomStars(CCObject *) {
+    if (!m_loaded || m_pending) return;
     if (!SessionManager::isElderMod()) return;
     int current = m_customStars >= 0 ? m_customStars : m_selectedStars;
     auto weak = WeakRef(this);
     if (auto* popup = CustomStarsPopup::create(current, [weak](int stars) {
-            if (auto self = weak.lock()) { self->m_customStars = stars; self->updateAwardLabel(); }
+            if (auto self = weak.lock()) {
+                self->m_customStars = stars; self->m_customChosen = stars >= 0; self->m_chosen = true;
+                self->updateAwardLabel(); self->updateSubmit();
+            }
         })) popup->show();
 }
 
@@ -147,12 +186,16 @@ void DevRateStarsPopup::updateSwitchVisibility() {
 }
 
 void DevRateStarsPopup::onStarsAwardToggle(CCObject *) {
+    if (!m_loaded || m_pending) return;
+    m_chosen = true; updateSubmit();
     m_awardStars = !m_awardStars;
     this->updateStarsToggleVisuals();
     this->updateDifficultyVisuals();
 }
 
 void DevRateStarsPopup::onFeature(CCObject *) {
+    if (!m_loaded || m_pending) return;
+    m_chosen = true; updateSubmit();
     auto *sprite = static_cast<CCSprite *>(m_featureButton->getNormalImage());
     auto *spriteCache = CCSpriteFrameCache::sharedSpriteFrameCache();
 
@@ -178,6 +221,8 @@ void DevRateStarsPopup::onFeature(CCObject *) {
 }
 
 void DevRateStarsPopup::onCoins(CCObject *) {
+    if (!m_loaded || m_pending) return;
+    m_chosen = true; updateSubmit();
     m_coinsEnabled = !m_coinsEnabled;
     m_coinsButton->setOpacity(m_coinsEnabled ? ENABLED_OPACITY : DISABLED_OPACITY);
 }
@@ -199,15 +244,19 @@ void DevRateStarsPopup::onIncrease(CCObject *) {
 }
 
 void DevRateStarsPopup::onDifficultyFace(CCObject *) {
+    if (!m_loaded || m_pending) return;
     // Secondary shortcut: cycle demon subtypes at 10 stars
     if (m_selectedStars != 10)
         return;
 
+    m_chosen = true; updateSubmit();
     m_demonDiff = (m_demonDiff + 1) % Utils::DEMON_SUBTYPE_COUNT;
     this->updateDifficultyVisuals();
 }
 
 void DevRateStarsPopup::onSwitch(CCObject *) {
+    if (!m_loaded || m_pending) return;
+    m_chosen = true; updateSubmit();
     if (m_selectedStars == 10) {
         this->openDemonSwitchPopup();
         return;
@@ -291,7 +340,7 @@ void DevRateStarsPopup::refreshLevelPage() const {
 void DevRateStarsPopup::onSendOnly(CCObject*) { submitRating(false); }
 
 void DevRateStarsPopup::submitRating(bool rate) {
-    if (m_pending) return;
+    if (m_pending || !m_loaded || !m_chosen) return;
     m_pending = true; m_submitButton->setEnabled(false); m_submitButton->setOpacity(127);
     auto weak = WeakRef(this);
     StaffRatingClient::request(m_levelId, rate ? "stars" : "send", {
@@ -299,7 +348,7 @@ void DevRateStarsPopup::submitRating(bool rate) {
         {"coins", m_coinsEnabled ? "1" : "0"}, {"tier", std::to_string(static_cast<int>(m_featureState))}
     }, [weak, level = m_levelId, rate](bool ok, std::string message, matjson::Value) {
         auto popup = weak.lock(); if (!popup) return;
-        popup->m_pending = false; popup->m_submitButton->setEnabled(true); popup->m_submitButton->setOpacity(255);
+        popup->m_pending = false; popup->updateSubmit();
         if (!ok) { FLAlertLayer::create("Could not save", message, "OK")->show(); return; }
         Notification::create(rate ? "Rating saved" : "Sent to the Sent tab", NotificationIcon::Success)->show();
         popup->onClose(nullptr); StaffRatingClient::refreshLevel(level);
