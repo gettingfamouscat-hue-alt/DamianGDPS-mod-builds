@@ -4,14 +4,6 @@
 
 class $modify(GrdDemonFilterSelectLayer, DemonFilterSelectLayer) {
 
-    struct Fields {
-        CCSprite* m_demon0Spr = nullptr;
-        CCSprite* m_demon1Spr = nullptr;
-        CCSprite* m_demon2Spr = nullptr;
-        CCSprite* m_demon3Spr = nullptr;
-        CCSprite* m_demon4Spr = nullptr;
-        CCSprite* m_demon5Spr = nullptr;
-    };
     
 
     static void onModify(auto &self) {
@@ -20,21 +12,15 @@ class $modify(GrdDemonFilterSelectLayer, DemonFilterSelectLayer) {
 
     bool init() {
         
-        DemonFilterSelectLayer::init();
+        if (!DemonFilterSelectLayer::init()) return false;
 
         if (ListManager::demonIDList.empty()) {
             return true;
         }
 
         handleTouchPriority(this);
-        CCLayer* layer = nullptr;
-
-        CCObject* layerObj;
-        for (auto* layerObj : CCArrayExt<CCObject*>(this->getChildren())) {
-            if (auto newObj = static_cast<CCLayer*>(layerObj)) {
-                layer = newObj;
-            }
-        }
+        auto* layer = m_mainLayer;
+        if (!layer) return true;
 
         CCScale9Sprite* s9spr = nullptr;
         CCLabelBMFont* label = nullptr;
@@ -64,6 +50,8 @@ class $modify(GrdDemonFilterSelectLayer, DemonFilterSelectLayer) {
             }
         }
 
+        if (!s9spr || !label || !menu || !okButton) return true;
+
         auto csize = s9spr->getContentSize();
         s9spr->setContentSize({csize.width, csize.height * 1.5f});
         auto newcsize = s9spr->getContentSize();
@@ -90,34 +78,28 @@ class $modify(GrdDemonFilterSelectLayer, DemonFilterSelectLayer) {
         // create buttons and sprites
 
         auto demon0Spr = CCSprite::createWithSpriteFrameName("GrD_demon0_text.png"_spr);
-        this->m_fields->m_demon0Spr = demon0Spr;
         auto demon0Btn = CCMenuItemSpriteExtra::create(demon0Spr, this, menu_selector(GrdDemonFilterSelectLayer::onButton0));
         newMenu->addChild(demon0Btn);
         
         auto demon1Spr = CCSprite::createWithSpriteFrameName("GrD_demon1_text.png"_spr);
-        this->m_fields->m_demon1Spr = demon1Spr;
         auto demon1Btn = CCMenuItemSpriteExtra::create(demon1Spr, this, menu_selector(GrdDemonFilterSelectLayer::onButton1));
         newMenu->addChild(demon1Btn);
 
         auto demon2Spr = CCSprite::createWithSpriteFrameName("GrD_demon2_text.png"_spr);
-        this->m_fields->m_demon2Spr = demon2Spr;
         auto demon2Btn = CCMenuItemSpriteExtra::create(demon2Spr, this, menu_selector(GrdDemonFilterSelectLayer::onButton2));
         newMenu->addChild(demon2Btn);
 
         auto demon3Spr = CCSprite::createWithSpriteFrameName("GrD_demon3_text.png"_spr);
-        this->m_fields->m_demon3Spr = demon3Spr;
         auto demon3Btn = CCMenuItemSpriteExtra::create(demon3Spr, this, menu_selector(GrdDemonFilterSelectLayer::onButton3));
         newMenu->addChild(demon3Btn);
 
         auto demon4Spr = CCSprite::createWithSpriteFrameName("GrD_demon4_text.png"_spr);
-        this->m_fields->m_demon4Spr = demon4Spr;
         auto demon4Btn = CCMenuItemSpriteExtra::create(demon4Spr, this, menu_selector(GrdDemonFilterSelectLayer::onButton4));
         newMenu->addChild(demon4Btn);
 
         if (!(Mod::get()->getSettingValue<bool>("grandpa-demon-disable"))) {
             auto demon5Spr = CCSprite::createWithSpriteFrameName("GrD_demon5_text.png"_spr);
-            this->m_fields->m_demon5Spr = demon5Spr;
-            auto demon5Btn = CCMenuItemSpriteExtra::create(demon5Spr, this, menu_selector(GrdDemonFilterSelectLayer::onButton5));
+                auto demon5Btn = CCMenuItemSpriteExtra::create(demon5Spr, this, menu_selector(GrdDemonFilterSelectLayer::onButton5));
             newMenu->addChild(demon5Btn);
         }   
         
