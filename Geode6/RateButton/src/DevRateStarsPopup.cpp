@@ -3,6 +3,7 @@
 #include "DiffPickPopup.hpp"
 #include "managers/SessionManager.hpp"
 #include "managers/SettingsManager.hpp"
+#include "managers/StaffRatingClient.hpp"
 #include "utils/CustomFace.hpp"
 #include "utils/Utils.hpp"
 
@@ -14,237 +15,84 @@
 using namespace geode::prelude;
 
 bool DevRateStarsPopup::init(int levelId) {
-    if (!SessionManager::canUseRateButton()) return false;
-    if (!Popup::init(360.f, 210.f))
-        return false;
-
+    if (!SessionManager::canUseRateButton() || !Popup::init(430.f, 300.f)) return false;
     m_levelId = levelId;
+    bool elder = SessionManager::isElderMod();
+    setTitle(elder ? "Dev: Set Stars" : "Advisor: Suggest Stars", "bigFont.fnt", .75f);
+    setID("dev-rate-stars-popup"_spr);
 
-    // Elder = full rate UI. Access 1 (Mod) = send-to-mod queue only.
-    auto const elder = SessionManager::isElderMod();
-    this->setTitle(elder ? "Mod: Rate Level" : "Mod: Send Mod", "bigFont.fnt", 1.0f);
-    m_title->setPositionY(m_title->getPositionY() - 5.f);
-
-    this->setID("dev-rate-stars-popup"_spr);
-
-    /*
-        STAR AWARD TOGGLE
-        Logo on  = submit selected star count
-        Logo off = submit 0 stars (difficulty face / fire / coins still apply)
-    */
-    m_starsToggleSprite = CCSprite::createWithSpriteFrameName("GJ_starsIcon_001.png");
-    m_starsToggleSprite->setScale(1.15f);
-
-    m_starsToggleButton = CCMenuItemSpriteExtra::create(
-        m_starsToggleSprite,
-        this,
-        menu_selector(DevRateStarsPopup::onStarsAwardToggle)
-    );
-    m_starsToggleButton->setID("stars-award-toggle"_spr);
-    // Sit above the star count — keep clear of the popup close (X) button
-    m_buttonMenu->addChildAtPosition(m_starsToggleButton, Anchor::Left, { 130.f, 42.f });
-
-    // Red X overlay when stars are not awarded
-    m_starsOffMark = CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png");
-    m_starsOffMark->setScale(0.55f);
-    m_starsOffMark->setVisible(false);
-    m_starsOffMark->setID("stars-award-off-mark"_spr);
-    m_starsToggleButton->addChild(m_starsOffMark);
-    // The star is scaled inside its menu item. Align in the button's space.
-    m_starsOffMark->setAnchorPoint({ .5f, .5f });
-    m_starsOffMark->setPosition(m_starsToggleButton->convertToNodeSpace(
-        m_starsToggleSprite->convertToWorldSpace(m_starsToggleSprite->getContentSize() / 2.f)));
-
-    /*
-        FEATURE BUTTON LOGIC
-    */
-    m_featureButton = CCMenuItemSpriteExtra::create(
-        CCSprite::createWithSpriteFrameName("GJ_featuredCoin_001.png"),
-        this,
-        menu_selector(DevRateStarsPopup::onFeature)
-    );
-    m_featureButton->setOpacity(DISABLED_OPACITY);
-    m_featureButton->setID("feature-button"_spr);
-    m_buttonMenu->addChildAtPosition(m_featureButton, Anchor::TopRight, { -10.f, -10.f });
-
-    /*
-        COINS BUTTON LOGIC
-    */
-    auto *coinsSprite = CCSprite::createWithSpriteFrameName("secretCoinUI2_001.png");
-    coinsSprite->setScale(44.f / 53.75f);
-
-    m_coinsButton = CCMenuItemSpriteExtra::create(
-        coinsSprite,
-        this,
-        menu_selector(DevRateStarsPopup::onCoins)
-    );
-    m_coinsButton->setOpacity(DISABLED_OPACITY);
-    m_coinsButton->setID("coins-button"_spr);
-    m_buttonMenu->addChildAtPosition(m_coinsButton, Anchor::BottomRight, { -10.f, 10.f });
-
-    /*
-        LOWER STARS BUTTON LOGIC
-    */
-    m_decreaseStarsButton = CCMenuItemSpriteExtra::create(
-        CCSprite::createWithSpriteFrameName("GJ_arrow_02_001.png"),
-        this,
-        menu_selector(DevRateStarsPopup::onDecrease)
-    );
-    m_decreaseStarsButton->setRotation(-90.f);
-    m_decreaseStarsButton->setID("decrease-stars-button"_spr);
-    m_buttonMenu->addChildAtPosition(m_decreaseStarsButton, Anchor::Left, { 85.f, 0.f });
-
-    /*
-        STARS LABEL LOGIC
-    */
-    m_starsLabel = CCLabelBMFont::create("0", "bigFont.fnt");
-    m_starsLabel->setID("stars-label"_spr);
-    m_buttonMenu->addChildAtPosition(m_starsLabel, Anchor::Left, { 130.f, 0.f });
-
-    /*
-        INCREASE STARS BUTTON LOGIC
-    */
-    m_increaseStarsButton = CCMenuItemSpriteExtra::create(
-        CCSprite::createWithSpriteFrameName("GJ_arrow_02_001.png"),
-        this,
-        menu_selector(DevRateStarsPopup::onIncrease)
-    );
-    m_increaseStarsButton->setRotation(90.f);
-    m_increaseStarsButton->setID("increase-stars-button"_spr);
-    m_buttonMenu->addChildAtPosition(m_increaseStarsButton, Anchor::Left, { 175.f, 0.f });
-
-    // Award amount can differ from the face chosen with the arrows.
-    m_awardLabel = CCLabelBMFont::create("Given: 0", "bigFont.fnt");
-    m_awardLabel->setScale(.35f);
-    m_awardLabel->setID("stars-given-label"_spr);
-    m_buttonMenu->addChildAtPosition(m_awardLabel, Anchor::Left, { 130.f, -27.f });
-    if (elder) {
-        auto* customButton = CCMenuItemSpriteExtra::create(
-            ButtonSprite::create("Set Stars"), this,
-            menu_selector(DevRateStarsPopup::onCustomStars));
-        customButton->setScale(.53f);
-        customButton->setID("custom-stars-button"_spr);
-        m_buttonMenu->addChildAtPosition(customButton, Anchor::Left, { 130.f, -49.f });
+    auto addText = [this](char const* text, CCPoint position, float scale) {
+        auto* label = CCLabelBMFont::create(text, "bigFont.fnt");
+        label->setScale(scale); label->setPosition(position); m_mainLayer->addChild(label); return label;
+    };
+    for (int n = elder ? 0 : 1; n <= Utils::GRANDPA_LAST_STARS; ++n) {
+        auto* sprite = ButtonSprite::create(std::to_string(n).c_str(), 34, true,
+            "bigFont.fnt", "GJ_button_04.png", 32.f, .6f);
+        auto* button = CCMenuItemSpriteExtra::create(sprite, this, menu_selector(DevRateStarsPopup::onNumber));
+        button->setTag(n); button->setID(fmt::format("stars-pick-{}"_spr, n));
+        if (n == 0) button->setPosition({395.f, 266.f});
+        else if (n <= 10) button->setPosition({55.f + ((n-1)%5)*47.f, n <= 5 ? 235.f : 192.f});
+        else { button->setScale(.85f); button->setPosition({41.f + (n-11)*43.f, 151.f}); }
+        m_buttonMenu->addChild(button); m_numberButtons.push_back(button);
     }
-
-    /*
-        DIFFICULTY FACE LOGIC
-        Always driven by selected stars. At 10★ / 2★, Switch picks subtype.
-        Face click still cycles demons at 10★ as a secondary shortcut.
-    */
+    addText("Extra demons", {147.f, 130.f}, .24f);
+    for (int n = 0; n < Utils::DEMON_SUBTYPE_COUNT; ++n) {
+        auto* face = CCSprite::createWithSpriteFrameName(Utils::getDemonFaceFrame(n));
+        face->setScale(.75f);
+        auto* button = CCMenuItemSpriteExtra::create(face, this, menu_selector(DevRateStarsPopup::onDemon));
+        button->setTag(n); button->setPosition({55.f + n*47.f, 105.f});
+        m_buttonMenu->addChild(button); m_demonButtons.push_back(button);
+    }
+    m_starsLabel = addText("0", {350.f, 171.f}, .55f);
     m_difficultyFace = CCSprite::createWithSpriteFrameName("difficulty_00_btn_001.png");
-    m_difficultyFace->setScale(1.25f);
-    m_difficultyFace->setID("difficulty-face"_spr);
-
-    m_difficultyFaceButton = CCMenuItemSpriteExtra::create(
-        m_difficultyFace,
-        this,
-        menu_selector(DevRateStarsPopup::onDifficultyFace)
-    );
-    m_difficultyFaceButton->setID("difficulty-face-button"_spr);
-    m_buttonMenu->addChildAtPosition(m_difficultyFaceButton, Anchor::Right, { -85.f, 12.f });
-
-    auto *switchSprite = ButtonSprite::create(
-        "Switch", 56, true, "goldFont.fnt", "GJ_button_05.png", 24.f, 0.55f
-    );
+    m_difficultyFaceButton = CCMenuItemSpriteExtra::create(m_difficultyFace, this, menu_selector(DevRateStarsPopup::onDifficultyFace));
+    m_difficultyFaceButton->setPosition({350.f, 217.f}); m_buttonMenu->addChild(m_difficultyFaceButton);
     m_switchButton = CCMenuItemSpriteExtra::create(
-        switchSprite,
-        this,
-        menu_selector(DevRateStarsPopup::onSwitch)
-    );
-    m_switchButton->setID("diff-switch-button"_spr);
-    m_switchButton->setVisible(false);
-    m_buttonMenu->addChildAtPosition(m_switchButton, Anchor::Right, { -85.f, -48.f });
-    m_grandpaLabel = CCLabelBMFont::create("", "bigFont.fnt");
-    m_grandpaLabel->setScale(.32f);
-    m_grandpaLabel->setVisible(false);
-    m_grandpaLabel->setID("grandpa-demon-name"_spr);
-    m_buttonMenu->addChildAtPosition(m_grandpaLabel, Anchor::Right, { -85.f, -48.f });
+        ButtonSprite::create("Switch", 56, true, "goldFont.fnt", "GJ_button_05.png", 24.f, .55f),
+        this, menu_selector(DevRateStarsPopup::onSwitch));
+    m_switchButton->setPosition({350.f, 145.f}); m_buttonMenu->addChild(m_switchButton);
+    m_grandpaLabel = addText("", {350.f, 145.f}, .3f);
 
-    /*
-        DAILY / WEEKLY — Elder only
-    */
-    if (elder && SettingsManager::ShowDailyButton) {
-        auto *dailySprite = ButtonSprite::create(
-            "Set\nDaily", 50, true, "goldFont.fnt", "GJ_button_01.png", 40.f, 1.0f
-        );
-        dailySprite->setScale(0.6f);
-
-        auto *dailyButton = CCMenuItemSpriteExtra::create(
-            dailySprite,
-            this,
-            menu_selector(DevRateStarsPopup::onDaily)
-        );
-        dailyButton->setID("daily-button"_spr);
-        m_buttonMenu->addChildAtPosition(dailyButton, Anchor::Left, { 30.f, 15.f });
-    }
-
-    if (elder && SettingsManager::ShowWeeklyButton) {
-        auto *weeklySprite = ButtonSprite::create(
-            "Set\nWeek", 50, true, "goldFont.fnt", "GJ_button_01.png", 40.f, 1.0f
-        );
-        weeklySprite->setScale(0.6f);
-
-        auto *weeklyButton = CCMenuItemSpriteExtra::create(
-            weeklySprite,
-            this,
-            menu_selector(DevRateStarsPopup::onWeekly)
-        );
-        weeklyButton->setID("weekly-button"_spr);
-        m_buttonMenu->addChildAtPosition(weeklyButton, Anchor::Left, { 30.f, -15.f });
-    }
-
-    /*
-        SEND ONLY — always for normal mods; optional extra for elders
-    */
-    if (!elder || SettingsManager::ShowSendOnlyButton) {
-        auto *sendOnlySprite = ButtonSprite::create(
-            elder ? "Send\nOnly" : "Send", 50, true, "goldFont.fnt", "GJ_button_01.png", 40.f, 1.0f
-        );
-        sendOnlySprite->setScale(0.6f);
-
-        auto *sendOnlyButton = CCMenuItemSpriteExtra::create(
-            sendOnlySprite,
-            this,
-            menu_selector(DevRateStarsPopup::onSendOnly)
-        );
-        sendOnlyButton->setID("send-only-button"_spr);
-        if (elder) {
-            m_buttonMenu->addChildAtPosition(sendOnlyButton, Anchor::Right, { -30.f, -30.f });
-        } else {
-            m_buttonMenu->addChildAtPosition(sendOnlyButton, Anchor::Bottom, { 60.f, 25.f });
-            sendOnlySprite->setScale(1.0f);
-        }
-    }
-
-    /*
-        CANCEL BUTTON LOGIC
-    */
-    auto *cancelButton = CCMenuItemSpriteExtra::create(
-        ButtonSprite::create("Cancel", "goldFont.fnt", "GJ_button_01.png"),
-        this,
-        menu_selector(DevRateStarsPopup::onCancel)
-    );
-    cancelButton->setID("cancel-button"_spr);
-    m_buttonMenu->addChildAtPosition(cancelButton, Anchor::Bottom, { -60.f, 25.f });
-
-    /*
-        SUBMIT (actual rate) — Elder only
-    */
+    m_starsToggleSprite = CCSprite::createWithSpriteFrameName("GJ_starsIcon_001.png");
+    m_starsToggleButton = CCMenuItemSpriteExtra::create(m_starsToggleSprite, this, menu_selector(DevRateStarsPopup::onStarsAwardToggle));
+    m_starsToggleButton->setPosition({27.f, 267.f}); m_buttonMenu->addChild(m_starsToggleButton);
+    m_starsOffMark = CCSprite::createWithSpriteFrameName("GJ_deleteIcon_001.png");
+    m_starsOffMark->setScale(.55f); m_starsToggleButton->addChild(m_starsOffMark);
+    m_starsOffMark->setAnchorPoint({.5f, .5f});
+    m_starsOffMark->setPosition(m_starsToggleButton->convertToNodeSpace(
+        m_starsToggleSprite->convertToWorldSpace(m_starsToggleSprite->getContentSize()/2.f)));
+    m_awardLabel = addText("Given: 0", {142.f, 76.f}, .35f);
     if (elder) {
-        auto *submitButton = CCMenuItemSpriteExtra::create(
-            ButtonSprite::create("Submit", "goldFont.fnt", "GJ_button_01.png"),
-            this,
-            menu_selector(DevRateStarsPopup::onSubmit)
-        );
-        submitButton->setID("submit-button"_spr);
-        m_buttonMenu->addChildAtPosition(submitButton, Anchor::Bottom, { 60.f, 25.f });
+        auto* custom = CCMenuItemSpriteExtra::create(ButtonSprite::create("Set Stars"), this, menu_selector(DevRateStarsPopup::onCustomStars));
+        custom->setScale(.5f); custom->setPosition({142.f, 53.f}); m_buttonMenu->addChild(custom);
     }
-
-    this->updateStarsToggleVisuals();
-    this->updateDifficultyVisuals();
-
+    auto* coin = CCSprite::createWithSpriteFrameName("secretCoinUI2_001.png"); coin->setScale(.5f);
+    m_coinsButton = CCMenuItemSpriteExtra::create(coin, this, menu_selector(DevRateStarsPopup::onCoins));
+    m_coinsButton->setPosition({elder ? 350.f : 390.f, 102.f}); m_buttonMenu->addChild(m_coinsButton);
+    addText("Silver coins", {elder ? 350.f : 380.f, 76.f}, .23f);
+    if (!elder) {
+        auto* fire = CCSprite::createWithSpriteFrameName("GJ_featuredCoin_001.png"); fire->setScale(.65f);
+        m_featureButton = CCMenuItemSpriteExtra::create(fire, this, menu_selector(DevRateStarsPopup::onFeature));
+        m_featureButton->setPosition({315.f, 102.f}); m_featureButton->setOpacity(DISABLED_OPACITY);
+        m_buttonMenu->addChild(m_featureButton); addText("Fire", {315.f, 76.f}, .23f);
+    }
+    auto* cancel = CCMenuItemSpriteExtra::create(ButtonSprite::create("Cancel"), this, menu_selector(DevRateStarsPopup::onCancel));
+    auto* submit = CCMenuItemSpriteExtra::create(ButtonSprite::create("Submit"), this, menu_selector(DevRateStarsPopup::onSubmit));
+    cancel->setScale(.7f); submit->setScale(.7f);
+    cancel->setPosition({155.f, 25.f}); submit->setPosition({275.f, 25.f});
+    m_buttonMenu->addChild(cancel); m_buttonMenu->addChild(submit); m_submitButton = submit;
+    updateStarsToggleVisuals(); updateDifficultyVisuals();
+    m_coinsButton->setOpacity(DISABLED_OPACITY);
     return true;
+}
+
+void DevRateStarsPopup::onNumber(CCObject* sender) {
+    m_selectedStars = static_cast<CCNode*>(sender)->getTag();
+    updateDifficultyVisuals();
+}
+void DevRateStarsPopup::onDemon(CCObject* sender) {
+    m_demonDiff = static_cast<CCNode*>(sender)->getTag();
+    updateDifficultyVisuals();
 }
 
 int DevRateStarsPopup::starsToSubmit() const {
@@ -259,9 +107,9 @@ void DevRateStarsPopup::updateAwardLabel() {
 void DevRateStarsPopup::onCustomStars(CCObject *) {
     if (!SessionManager::isElderMod()) return;
     int current = m_customStars >= 0 ? m_customStars : m_selectedStars;
-    if (auto* popup = CustomStarsPopup::create(current, [this](int stars) {
-            m_customStars = stars;
-            updateAwardLabel();
+    auto weak = WeakRef(this);
+    if (auto* popup = CustomStarsPopup::create(current, [weak](int stars) {
+            if (auto self = weak.lock()) { self->m_customStars = stars; self->updateAwardLabel(); }
         })) popup->show();
 }
 
@@ -440,41 +288,22 @@ void DevRateStarsPopup::refreshLevelPage() const {
     }).detach();
 }
 
-void DevRateStarsPopup::onSendOnly(CCObject *) {
-    if (!SessionManager::canUseRateButton()) { Notification::create("No staff permission", NotificationIcon::Error)->show(); return; }
-    auto const stars = this->starsToSubmit();
+void DevRateStarsPopup::onSendOnly(CCObject*) { submitRating(false); }
 
-    if (m_selectedStars > 0 || stars > 0) {
-        // Trailing nonce so GD client / servers don't treat identical !send
-        // as a duplicate comment and silently drop re-sends.
-        auto const nonce = static_cast<long long>(
-            std::chrono::steady_clock::now().time_since_epoch().count() % 1000000LL
-        );
-        GameLevelManager::sharedState()->uploadComment(
-            fmt::format(
-                "!send {} {} {} {} #{}",
-                difficultyCommandName(),
-                stars,
-                static_cast<int>(m_featureState),
-                m_coinsEnabled ? 1 : 0,
-                nonce
-            ),
-            CommentType::Level, m_levelId, 0
-        );
-    } else {
-        GameLevelManager::sharedState()->uploadComment(
-            fmt::format(
-                "!unsend #{}",
-                static_cast<long long>(
-                    std::chrono::steady_clock::now().time_since_epoch().count() % 1000000LL
-                )
-            ),
-            CommentType::Level, m_levelId, 0
-        );
-    }
-
-    this->refreshLevelPage();
-    this->onClose(nullptr);
+void DevRateStarsPopup::submitRating(bool rate) {
+    if (m_pending) return;
+    m_pending = true; m_submitButton->setEnabled(false); m_submitButton->setOpacity(127);
+    auto weak = WeakRef(this);
+    StaffRatingClient::request(m_levelId, rate ? "stars" : "send", {
+        {"difficulty", std::string(difficultyCommandName())}, {"stars", std::to_string(starsToSubmit())},
+        {"coins", m_coinsEnabled ? "1" : "0"}, {"tier", std::to_string(static_cast<int>(m_featureState))}
+    }, [weak, level = m_levelId, rate](bool ok, std::string message, matjson::Value) {
+        auto popup = weak.lock(); if (!popup) return;
+        popup->m_pending = false; popup->m_submitButton->setEnabled(true); popup->m_submitButton->setOpacity(255);
+        if (!ok) { FLAlertLayer::create("Could not save", message, "OK")->show(); return; }
+        Notification::create(rate ? "Rating saved" : "Sent to the Sent tab", NotificationIcon::Success)->show();
+        popup->onClose(nullptr); StaffRatingClient::refreshLevel(level);
+    });
 }
 
 void DevRateStarsPopup::onCancel(CCObject *) {
@@ -492,28 +321,8 @@ std::string_view DevRateStarsPopup::difficultyCommandName() const {
     return Utils::getLevelDifficulty(m_selectedStars);
 }
 
-void DevRateStarsPopup::onSubmit(CCObject *) {
-    if (!SessionManager::isElderMod()) { Notification::create("Rating requires Elder Mod or Admin", NotificationIcon::Error)->show(); return; }
-    if (m_selectedStars > 0 || this->starsToSubmit() > 0) {
-        // Face always from picker. Stars only if the star logo toggle is on.
-        GameLevelManager::sharedState()->uploadComment(
-            fmt::format(
-                "!rate {} {} {} {}",
-                difficultyCommandName(),
-                this->starsToSubmit(),
-                m_coinsEnabled ? 1 : 0,
-                static_cast<int>(m_featureState)
-            ),
-            CommentType::Level, m_levelId, 0
-        );
-    } else {
-        GameLevelManager::sharedState()->uploadComment(
-            "!unrate", CommentType::Level, m_levelId, 0
-        );
-    }
-
-    this->refreshLevelPage();
-    this->onClose(nullptr);
+void DevRateStarsPopup::onSubmit(CCObject*) {
+    submitRating(SessionManager::isElderMod());
 }
 
 bool DevRateStarsPopup::applyCustomFaceTexture(CCSprite *face, char const *sprName) {
@@ -523,6 +332,14 @@ bool DevRateStarsPopup::applyCustomFaceTexture(CCSprite *face, char const *sprNa
 void DevRateStarsPopup::updateDifficultyVisuals() {
     auto *spriteCache = CCSpriteFrameCache::sharedSpriteFrameCache();
     updateAwardLabel();
+    for (auto* button : m_numberButtons) {
+        auto* sprite = static_cast<ButtonSprite*>(button->getNormalImage());
+        sprite->setColor(button->getTag() == m_selectedStars ? ccColor3B{110, 255, 70} : ccColor3B{255, 255, 255});
+    }
+    for (auto* button : m_demonButtons) {
+        button->setVisible(m_selectedStars == 10);
+        button->setOpacity(button->getTag() == m_demonDiff ? 255 : 140);
+    }
 
     static constexpr std::array difficultyFrames {
         "difficulty_00_btn_001.png", // N/A

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 using namespace geode::prelude;
 
 class DevRateStarsPopup : public geode::Popup {
@@ -15,6 +17,12 @@ protected:
     static constexpr GLubyte ENABLED_OPACITY = 255; // 100%
 
     int m_levelId = 0;
+    bool m_pending = false;
+    std::vector<CCMenuItemSpriteExtra*> m_numberButtons, m_demonButtons;
+    CCMenuItemSpriteExtra* m_submitButton = nullptr;
+    void onNumber(CCObject*);
+    void onDemon(CCObject*);
+    void submitRating(bool rate);
     CCMenuItemSpriteExtra *m_featureButton = nullptr;
     FeatureState m_featureState = FeatureState::None;
     CCMenuItemSpriteExtra *m_coinsButton = nullptr;

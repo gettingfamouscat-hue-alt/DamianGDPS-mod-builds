@@ -12,16 +12,16 @@ class CustomStarsPopup : public Popup {
     TextInput* input = nullptr;
     std::function<void(int)> onChoice;
 
-    bool init(int current, std::function<void(int)> callback) {
+    bool init(int current, std::function<void(int)> callback, bool featured) {
         if (!Popup::init(270.f, 160.f)) return false;
         onChoice = std::move(callback);
-        setTitle("Stars Given");
+        setTitle(featured ? "Featured Order" : "Stars Given");
 
-        auto* hint = CCLabelBMFont::create("0 to 2,147,483,647 stars", "bigFont.fnt");
+        auto* hint = CCLabelBMFont::create(featured ? "0 to 2,147,483,647" : "0 to 2,147,483,647 stars", "bigFont.fnt");
         hint->setScale(.3f);
         hint->setPosition({135.f, 115.f});
         m_mainLayer->addChild(hint);
-        auto* faceHint = CCLabelBMFont::create("Face stays the same", "bigFont.fnt");
+        auto* faceHint = CCLabelBMFont::create(featured ? "Higher appears first; 0 removes" : "Face stays the same", "bigFont.fnt");
         faceHint->setScale(.28f);
         faceHint->setPosition({135.f, 96.f});
         m_mainLayer->addChild(faceHint);
@@ -38,6 +38,7 @@ class CustomStarsPopup : public Popup {
         match->setScale(.65f);
         match->setPosition({73.f, 32.f});
         m_buttonMenu->addChild(match);
+        match->setVisible(!featured);
 
         auto* save = CCMenuItemSpriteExtra::create(
             ButtonSprite::create("Save"), this,
@@ -67,9 +68,9 @@ class CustomStarsPopup : public Popup {
     }
 
 public:
-    static CustomStarsPopup* create(int current, std::function<void(int)> callback) {
+    static CustomStarsPopup* create(int current, std::function<void(int)> callback, bool featured = false) {
         auto* popup = new CustomStarsPopup();
-        if (popup->init(current, std::move(callback))) {
+        if (popup->init(current, std::move(callback), featured)) {
             popup->autorelease();
             return popup;
         }

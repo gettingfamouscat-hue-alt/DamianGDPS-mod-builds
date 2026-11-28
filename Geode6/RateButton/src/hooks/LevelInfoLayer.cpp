@@ -1,6 +1,7 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/LevelInfoLayer.hpp>
 #include "../DevRateStarsPopup.hpp"
+#include "../FeaturedOrderPopup.hpp"
 #include "../CreatorDisplayPopup.hpp"
 #include "../managers/SessionManager.hpp"
 #include "../utils/CustomFace.hpp"
@@ -44,13 +45,14 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
     struct Fields {
         CCSprite *m_customFaceOverlay = nullptr;
         CreatorDisplay::State display;
+        bool starVisible = false, demonVisible = false;
     };
 
     void hideVanillaRateButtons() {
         if (m_starRateBtn)
-            m_starRateBtn->setVisible(false);
+            m_starRateBtn->setVisible(!SessionManager::isElderMod() && m_fields->starVisible);
         if (m_demonRateBtn)
-            m_demonRateBtn->setVisible(false);
+            m_demonRateBtn->setVisible(!SessionManager::isElderMod() && m_fields->demonVisible);
 
         // Stock mod suggest/rate uses the same yellow GJ_starBtnMod sprite as us.
         // Hide that duplicate whenever our Rate Button is in play (elders especially).
@@ -114,6 +116,15 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
             return;
         }
 
+        auto* adminStars = menu->getChildByID("admin-set-stars-button"_spr);
+        if (SessionManager::isElderMod() && !adminStars) {
+            auto* button = CCMenuItemSpriteExtra::create(
+                CCSprite::createWithSpriteFrameName("GJ_starBtn_001.png"), this,
+                menu_selector(MyLevelInfoLayer::onSetStars));
+            button->setID("admin-set-stars-button"_spr); menu->addChild(button); menu->updateLayout();
+        } else if (!SessionManager::isElderMod() && adminStars) {
+            adminStars->removeFromParent(); menu->updateLayout();
+        }
         auto *existing = menu->getChildByID("dev-rate-button"_spr);
 
         if (!SessionManager::canUseRateButton()) {
@@ -146,6 +157,8 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
         if (!LevelInfoLayer::init(level, challenge))
             return false;
 
+        m_fields->starVisible = m_starRateBtn && m_starRateBtn->isVisible();
+        m_fields->demonVisible = m_demonRateBtn && m_demonRateBtn->isVisible();
         SessionManager::ensureLoaded();
         // Custom faces always — Very Easy / Impossible encodings are GDPS-only.
         this->applyCustomDifficultyFace();
@@ -240,35 +253,14 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
         rewriteStarsRequestedText(this, name);
     }
 
-    void onDevRateButton(CCObject *) {
-        if (!SessionManager::canUseRateButton()) {
-            FLAlertLayer::create(
-                "No Permission",
-                "You don't have rating permissions on this GDPS.",
-                "OK"
-            )->show();
-            return;
-        }
-
-        if (!SessionManager::ShownRateButtonWarning) {
-            geode::createQuickPopup(
-                "Rate Button Warning",
-                "<cy>Elder Mod</c> can <cg>rate</c> levels.\n"
-                "<cy>Normal Mod</c> (Send Mod) can only <co>send</c> levels to the Sent tab.\n"
-                "If Damian hasn't given you a mod role, this button won't appear.\n\n"
-                "<cy>Do you acknowledge this?</c>\n<co>This will not be shown again.</c>",
-                "No", "Yes",
-                [levelID = static_cast<int>(m_level->m_levelID)](auto, bool btn2) {
-                    if (btn2) {
-                        Mod::get()->setSavedValue("shown-rate-button-warning", true);
-                        SessionManager::ShownRateButtonWarning = true;
-
-                        if (auto* popup = DevRateStarsPopup::create(levelID)) popup->show();
-                    }
-                }
-            );
-        } else {
+    void onSetStars(CCObject*) {
+        if (m_level && SessionManager::isElderMod())
             if (auto* popup = DevRateStarsPopup::create(m_level->m_levelID)) popup->show();
-        }
+    }
+    void onDevRateButton(CCObject*) {
+        if (!m_level || !SessionManager::canUseRateButton()) return;
+        if (SessionManager::isElderMod()) {
+            if (auto* popup = FeaturedOrderPopup::create(m_level->m_levelID)) popup->show();
+        } else if (auto* popup = DevRateStarsPopup::create(m_level->m_levelID)) popup->show();
     }
 };

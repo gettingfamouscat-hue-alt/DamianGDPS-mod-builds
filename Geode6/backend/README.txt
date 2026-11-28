@@ -1,0 +1,1 @@
+Staff rating endpoints for the GDPS backend. Apply the additive featured_order.sql migration once if the application account cannot ALTER tables. Deploy the files to their matching paths; keep all existing connection/role configuration. Authentication uses the existing GJP2 account checks. No credentials are included.
