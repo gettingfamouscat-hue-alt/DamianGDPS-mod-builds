@@ -20,7 +20,7 @@ final class FeaturedOrder {
     }
     public static function order(PDO $db): string {
         return self::available($db)
-            ? 'CASE WHEN featuredOrder > 0 THEN featuredOrder ELSE 1 END DESC, rateDate DESC, levels.levelID'
+            ? 'CASE WHEN featuredOrder > 0 THEN featuredOrder ELSE 1 END ASC, rateDate DESC, levels.levelID'
             : 'rateDate DESC, levels.levelID';
     }
 }

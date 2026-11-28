@@ -21,7 +21,7 @@ class CustomStarsPopup : public Popup {
         hint->setScale(.3f);
         hint->setPosition({135.f, 115.f});
         m_mainLayer->addChild(hint);
-        auto* faceHint = CCLabelBMFont::create(featured ? "Higher appears first; 0 removes" : "Face stays the same", "bigFont.fnt");
+        auto* faceHint = CCLabelBMFont::create(featured ? "Lower appears first; 0 removes" : "Face stays the same", "bigFont.fnt");
         faceHint->setScale(.28f);
         faceHint->setPosition({135.f, 96.f});
         m_mainLayer->addChild(faceHint);

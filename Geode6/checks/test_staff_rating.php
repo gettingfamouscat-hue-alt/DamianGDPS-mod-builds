@@ -33,7 +33,7 @@ $r=$rating->handle(1,['action'=>'demon','levelID'=>'1','difficulty'=>'easy-demon
 expect($r['subtype']===3 && $r['demon']===1 && $r['stars']===2147483647 && $r['coins']===1 && $r['order']===50 && $r['tier']===2,'Demon subtype changed unrelated awards/fire/order');
 $rating->handle(1,['action'=>'featured','levelID'=>'2','order'=>'500','tier'=>'1']);
 $order=$db->query('SELECT levelID FROM levels WHERE starFeatured=1 ORDER BY '.FeaturedOrder::order($db).' DESC')->fetchAll(PDO::FETCH_COLUMN);
-expect(array_map('intval',$order)===[2,1],'Featured ordering not highest first');
+expect(array_map('intval',$order)===[1,2],'Featured ordering not lowest first');
 $rating->handle(2,['action'=>'send','levelID'=>'3','difficulty'=>'grandpa-demon','stars'=>'16','coins'=>'1','tier'=>'4']);
 $s=$db->query('SELECT * FROM suggest')->fetch(PDO::FETCH_ASSOC);
 expect((int)$s['suggestDemonDiff']===13 && (int)$s['suggestCoins']===1 && (int)$s['suggestFeatured']===4,'Suggestion lost subtype/coins/fire');
@@ -42,4 +42,4 @@ foreach (['2147483648','-1','1.5','1 OR 1=1'] as $bad) { $invalid=$star; $invali
 $rating->handle(1,['action'=>'featured','levelID'=>'1','order'=>'0','tier'=>'0']);
 $r=$rating->handle(1,['action'=>'read','levelID'=>'1']);
 expect($r['order']===0 && $r['tier']===0 && $r['stars']===2147483647,'Unfeature changed stars');
-echo "PASS: permission boundaries including admin-only demon controls, N/A maximum stars, independent Featured/fire, descending order, complete suggestion details, invalid inputs, unfeature. No real levels changed.\n";
+echo "PASS: permission boundaries including admin-only demon controls, N/A maximum stars, independent Featured/fire, ascending Featured order, complete suggestion details, invalid inputs, unfeature. No real levels changed.\n";
