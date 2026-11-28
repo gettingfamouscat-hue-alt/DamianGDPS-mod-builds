@@ -244,7 +244,7 @@ inline void persistenceAPI::operator>>(Stream& i_stream, PAPlayerCheckpoint& o_v
     SEPARATOR_I
     i_stream >> o_value.m_lastSlopeSnapY;
     SEPARATOR_I
-    i_stream >> o_value.m_lastSlopeSnapY;
+    i_stream >> o_value.m_lastSlopeSnapOffset;
     SEPARATOR_I
     i_stream >> o_value.m_lastSlopeSnapAtFarEdge;
     SEPARATOR_I
@@ -363,7 +363,7 @@ inline void persistenceAPI::operator>>(Stream& i_stream, PAPlayerCheckpoint& o_v
     SEPARATOR_I
     i_stream >> o_value.m_platformMomentum;
     SEPARATOR_I
-    i_stream >> o_value.m_hasPlatformMomentum;
+    i_stream >> o_value.m_forcedSlopeSlide;
     SEPARATOR_I
     i_stream >> o_value.m_isSliding;
     SEPARATOR_I
@@ -622,7 +622,7 @@ inline void persistenceAPI::operator<<(Stream& o_stream, PAPlayerCheckpoint& i_v
     SEPARATOR_O
     o_stream << i_value.m_lastSlopeSnapY;
     SEPARATOR_O
-    o_stream << i_value.m_lastSlopeSnapY;
+    o_stream << i_value.m_lastSlopeSnapOffset;
     SEPARATOR_O
     o_stream << i_value.m_lastSlopeSnapAtFarEdge;
     SEPARATOR_O
@@ -742,7 +742,7 @@ inline void persistenceAPI::operator<<(Stream& o_stream, PAPlayerCheckpoint& i_v
     SEPARATOR_O
     o_stream << i_value.m_platformMomentum;
     SEPARATOR_O
-    o_stream << i_value.m_hasPlatformMomentum;
+    o_stream << i_value.m_forcedSlopeSlide;
     SEPARATOR_O
     o_stream << i_value.m_isSliding;
     SEPARATOR_O

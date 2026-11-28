@@ -32,6 +32,8 @@ jobs:
           cli: 'v4.0.2'
           bindings-ref: 42c3eed43010fa531e9bc5d0aca6f3c3c4f49608
           use-lto: false
+      - name: Check snapshot field coverage
+        run: python3 Geode6/checks/check_snapshot_fields.py Geode6/build/bindings/bindings/Geode/binding
       - uses: actions/upload-artifact@v7
         with:
           name: Geode6-${{ matrix.target }}

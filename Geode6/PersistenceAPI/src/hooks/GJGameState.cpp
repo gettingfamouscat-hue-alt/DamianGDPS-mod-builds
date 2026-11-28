@@ -170,6 +170,8 @@ inline void persistenceAPI::operator>>(Stream& i_stream, PAGJGameState& o_value)
     SEPARATOR_I
     i_stream >> o_value.m_timeWarp;
     SEPARATOR_I
+    i_stream >> o_value.m_queuedTimeWarp;
+    SEPARATOR_I
     i_stream >> o_value.m_timeWarpRelated;
     SEPARATOR_I
     i_stream >> o_value.m_currentChannel;
@@ -201,6 +203,8 @@ inline void persistenceAPI::operator>>(Stream& i_stream, PAGJGameState& o_value)
     i_stream >> o_value.m_positionHistoryClock;
     SEPARATOR_I
     i_stream >> o_value.m_areaEffectCounter;
+    SEPARATOR_I
+    i_stream >> o_value.m_advancedFollowCounter;
     SEPARATOR_I
     i_stream >> o_value.m_lastActivatedPortal1;
     SEPARATOR_I
@@ -515,6 +519,8 @@ inline void persistenceAPI::operator<<(Stream& o_stream, PAGJGameState& i_value)
     SEPARATOR_O
     o_stream << i_value.m_timeWarp;
     SEPARATOR_O
+    o_stream << i_value.m_queuedTimeWarp;
+    SEPARATOR_O
     o_stream << i_value.m_timeWarpRelated;
     SEPARATOR_O
     o_stream << i_value.m_currentChannel;
@@ -546,6 +552,8 @@ inline void persistenceAPI::operator<<(Stream& o_stream, PAGJGameState& i_value)
     o_stream << i_value.m_positionHistoryClock;
     SEPARATOR_O
     o_stream << i_value.m_areaEffectCounter;
+    SEPARATOR_O
+    o_stream << i_value.m_advancedFollowCounter;
     SEPARATOR_O
     o_stream << i_value.m_lastActivatedPortal1;
     SEPARATOR_O
