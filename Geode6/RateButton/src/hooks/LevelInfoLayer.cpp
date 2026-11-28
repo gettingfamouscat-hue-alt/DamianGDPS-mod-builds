@@ -49,6 +49,7 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
         bool starVisible = false, demonVisible = false;
         bool staffPositionSaved = false;
         CCPoint staffPosition{};
+        CCPoint creatorPosition{};
     };
 
     void hideVanillaRateButtons() {
@@ -125,21 +126,35 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
                 if (auto* nativeMenu = getChildByID(id))
                     if (auto* nativeButton = nativeMenu->getChildByID("mod-rate-button"))
                         m_fields->staffPosition = menu->convertToNodeSpace(nativeButton->convertToWorldSpace(nativeButton->getContentSize()/2.f));
+            m_fields->creatorPosition = m_fields->staffPosition + CCPoint{0.f, 38.f};
             m_fields->staffPositionSaved = true;
         }
+        // Move the existing server-delete button without rebuilding either
+        // native column. Its original slot is reserved for Creator.
+        if (auto* left = getChildByID("left-side-menu")) {
+            if (auto* remove = left->getChildByID("delete-server-button")) {
+                m_fields->creatorPosition = menu->convertToNodeSpace(remove->convertToWorldSpace(remove->getContentSize()/2.f));
+                Ref<CCNode> retained = remove; remove->removeFromParentAndCleanup(false); menu->addChild(retained);
+                remove->setScale(.65f); remove->setPosition({win.width - 30.f, 30.f});
+            }
+        }
+        if (auto* remove = menu->getChildByID("delete-server-button"))
+            remove->setVisible(SessionManager::isElderMod());
         auto* adminDemon = menu->getChildByID("admin-set-demon-button"_spr);
         if (SessionManager::canSetDemon() && !adminDemon) {
             auto* button = CCMenuItemSpriteExtra::create(
                 CCSprite::createWithSpriteFrameName("GJ_demonIcon_001.png"), this,
                 menu_selector(MyLevelInfoLayer::onSetDemon));
-            button->setID("admin-set-demon-button"_spr); button->setPosition({win.width - 82.f, 30.f}); menu->addChild(button);
+            button->setID("admin-set-demon-button"_spr); button->setScale(.65f);
+            if (auto* face = typeinfo_cast<CCSprite*>(button->getNormalImage())) face->setColor({35,35,35});
+            button->setPosition({win.width - 110.f, 70.f}); menu->addChild(button);
         } else if (!SessionManager::canSetDemon() && adminDemon) adminDemon->removeFromParent();
         auto* adminStars = menu->getChildByID("admin-set-stars-button"_spr);
         if (SessionManager::isElderMod() && !adminStars) {
             auto* button = CCMenuItemSpriteExtra::create(
                 CCSprite::createWithSpriteFrameName("GJ_starBtn_001.png"), this,
                 menu_selector(MyLevelInfoLayer::onSetStars));
-            button->setID("admin-set-stars-button"_spr); button->setPosition({win.width - 30.f, 30.f}); menu->addChild(button);
+            button->setID("admin-set-stars-button"_spr); button->setScale(.65f); button->setPosition({win.width - 110.f, 30.f}); menu->addChild(button);
         } else if (!SessionManager::isElderMod() && adminStars) {
             adminStars->removeFromParent(); 
         }
@@ -166,6 +181,7 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
         );
         devRateButton->setID("dev-rate-button"_spr);
 
+        devRateButton->setScale(.65f);
         devRateButton->setPosition(m_fields->staffPosition);
         menu->addChild(devRateButton);
         
@@ -208,9 +224,9 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
         if(!SessionManager::canManageRoles()) { if(existing){existing->removeFromParent();}return; }
         if(existing)return;
         auto* sprite=ButtonSprite::create("Creator");
-        sprite->setScale(.45f);
+        sprite->setScale(.35f);
         auto* b=CCMenuItemSpriteExtra::create(sprite,this,menu_selector(MyLevelInfoLayer::onCreatorDisplay));
-        b->setID("creator-display-button"_spr); b->setPosition(m_fields->staffPosition + CCPoint{0.f, 38.f}); menu->addChild(b);
+        b->setID("creator-display-button"_spr); b->setPosition(m_fields->creatorPosition); menu->addChild(b);
     }
     void pollPermissions(float) {
         SessionManager::refresh();

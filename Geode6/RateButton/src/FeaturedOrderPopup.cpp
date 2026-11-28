@@ -6,36 +6,36 @@
 #include <algorithm>
 #include <limits>
 bool FeaturedOrderPopup::init(int level) {
-    if (!SessionManager::isElderMod() || !Popup::init(400.f, 235.f)) return false;
-    m_level = level; setTitle("Set Featured", "bigFont.fnt", .85f);
+    if (!SessionManager::isElderMod() || !Popup::init(340.f, 165.f)) return false;
+    m_level = level; setTitle("Set Featured", "bigFont.fnt", .8f);
     setID("featured-order-popup"_spr);
     m_closeBtn->setVisible(false);
     m_number = CCLabelBMFont::create("Loading...", "bigFont.fnt");
     auto* number = CCMenuItemSpriteExtra::create(m_number, this, menu_selector(FeaturedOrderPopup::onNumber));
-    number->setPosition({200.f, 123.f}); m_buttonMenu->addChild(number);
-    int steps[] = {-100, -1, 1, 100}; float xs[] = {40.f, 90.f, 310.f, 360.f};
+    number->setPosition({170.f, 82.f}); m_buttonMenu->addChild(number);
+    int steps[] = {-100, -1, 1, 100}; float xs[] = {30.f, 73.f, 267.f, 310.f};
     for (int n = 0; n < 4; ++n) {
         auto* sprite = CCSprite::createWithSpriteFrameName("GJ_arrow_02_001.png");
-        sprite->setRotation(n < 2 ? -90.f : 90.f); sprite->setScale(.8f);
+        sprite->setRotation(n < 2 ? -90.f : 90.f); sprite->setScale(.65f);
         if (n == 0 || n == 3) sprite->setColor({155, 255, 80});
         auto* b = CCMenuItemSpriteExtra::create(sprite, this, menu_selector(FeaturedOrderPopup::onStep));
-        b->setTag(steps[n]); b->setPosition({xs[n], 123.f}); m_buttonMenu->addChild(b);
+        b->setTag(steps[n]); b->setPosition({xs[n], 82.f}); m_buttonMenu->addChild(b);
     }
-    m_fire = CCSprite::createWithSpriteFrameName("GJ_featuredCoin_001.png"); m_fire->setScale(.7f);
+    m_fire = CCSprite::createWithSpriteFrameName("GJ_featuredCoin_001.png"); m_fire->setScale(.5f);
     auto* fire = CCMenuItemSpriteExtra::create(m_fire, this, menu_selector(FeaturedOrderPopup::onFire));
-    fire->setPosition({0.f, 235.f}); m_buttonMenu->addChild(fire);
+    fire->setPosition({0.f, 165.f}); m_buttonMenu->addChild(fire);
     auto* cancel = CCMenuItemSpriteExtra::create(ButtonSprite::create("Cancel"), this, menu_selector(FeaturedOrderPopup::onCancel));
     m_submit = CCMenuItemSpriteExtra::create(ButtonSprite::create("Submit"), this, menu_selector(FeaturedOrderPopup::onSubmit));
-    cancel->setScale(.7f); m_submit->setScale(.7f);
-    cancel->setPosition({135.f, 25.f}); m_submit->setPosition({265.f, 25.f});
+    cancel->setScale(.65f); m_submit->setScale(.65f);
+    cancel->setPosition({110.f, 25.f}); m_submit->setPosition({230.f, 25.f});
     m_buttonMenu->addChild(cancel); m_buttonMenu->addChild(m_submit); update();
     if (SettingsManager::ShowDailyButton) {
         auto* b = CCMenuItemSpriteExtra::create(ButtonSprite::create("Daily"), this, menu_selector(FeaturedOrderPopup::onDaily));
-        b->setScale(.45f); b->setPosition({43.f, 60.f}); m_buttonMenu->addChild(b);
+        b->setScale(.35f); b->setPosition({30.f, 49.f}); m_buttonMenu->addChild(b);
     }
     if (SettingsManager::ShowWeeklyButton) {
         auto* b = CCMenuItemSpriteExtra::create(ButtonSprite::create("Weekly"), this, menu_selector(FeaturedOrderPopup::onWeekly));
-        b->setScale(.45f); b->setPosition({355.f, 60.f}); m_buttonMenu->addChild(b);
+        b->setScale(.35f); b->setPosition({310.f, 49.f}); m_buttonMenu->addChild(b);
     }
     auto weak = WeakRef(this);
     StaffRatingClient::request(level, "read", {}, [weak](bool ok, std::string error, matjson::Value body) {
@@ -48,7 +48,7 @@ bool FeaturedOrderPopup::init(int level) {
     return true;
 }
 void FeaturedOrderPopup::update() {
-    if (m_ready) { m_number->setString(std::to_string(m_order).c_str()); m_number->limitLabelWidth(175.f, 1.f, .35f); }
+    if (m_ready) { m_number->setString(std::to_string(m_order).c_str()); m_number->limitLabelWidth(125.f, 1.f, .35f); }
     char const* frames[] = {"GJ_featuredCoin_001.png", "GJ_featuredCoin_001.png", "GJ_epicCoin_001.png", "GJ_epicCoin2_001.png", "GJ_epicCoin3_001.png"};
     m_fire->setDisplayFrame(CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(frames[m_tier]));
     m_fire->setOpacity(m_tier ? 255 : 100);

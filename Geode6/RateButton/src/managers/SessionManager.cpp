@@ -29,10 +29,10 @@ namespace {
             manageRoles = pending = setDemon = false;
             verified = attempted = {};
         }
-        if (verified == Clock::time_point{} || Clock::now() - verified > std::chrono::seconds(10)) {
-            SessionManager::ModAccessLevel = 0;
-            manageRoles = setDemon = false;
-        }
+        // Cached flags control visibility only. Keep them during transient network
+        // failures so the UI does not flicker. Every mutation is authenticated
+        // again by its server endpoint; account/server changes clear flags above.
+
     }
 }
 
@@ -67,7 +67,6 @@ void SessionManager::refresh(bool force) {
     ensureLoaded();
     if (currentAccount <= 0 || currentCredential.empty() || currentServer.empty() || pending) return;
     if (!force && attempted != Clock::time_point{} && Clock::now() - attempted < std::chrono::seconds(5)) return;
-    if (force) { ModAccessLevel = 0; manageRoles = setDemon = false; verified = {}; }
     attempted = Clock::now();
     pending = true;
     auto const epoch = generation;
@@ -84,9 +83,12 @@ void SessionManager::refresh(bool force) {
             syncContext();
             if (epoch != generation) return;
             pending = false;
-            ModAccessLevel = 0;
-            manageRoles = setDemon = false;
-            if (!response.ok()) return;
+            if (!response.ok()) {
+                if (response.code() == 401 || response.code() == 403) {
+                    ModAccessLevel = 0; manageRoles = setDemon = false;
+                }
+                return;
+            }
             auto parsed = response.json();
             if (!parsed) return;
             auto body = parsed.unwrap();
