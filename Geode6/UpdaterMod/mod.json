@@ -3,7 +3,7 @@
   "gd": {"win": "2.2091", "mac": "2.2091", "android": "2.2091"},
   "id": "damian.mod-updater",
   "name": "Damian Auto Update",
-  "version": "v1.0.0",
+  "version": "v1.0.1",
   "developer": "damian",
   "description": "Reinstall the latest Damian GDPS mods and required dependencies, then restart.",
   "dependencies": {"geode.node-ids": ">=v1.24.0"},

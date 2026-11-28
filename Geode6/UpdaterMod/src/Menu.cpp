@@ -62,13 +62,21 @@ public:
 };
 }
 class $modify(DamianUpdateMenu,MenuLayer) {
-    void onEnter() {
-        MenuLayer::onEnter();
+    bool init() {
+        if (!MenuLayer::init()) return false;
+        auto weak=WeakRef(this);
+        Loader::get()->queueInMainThread([weak] {
+            if (auto self=weak.lock()) self->addUpdateButton();
+        });
+        return true;
+    }
+    void addUpdateButton() {
         if (getChildByIDRecursive("auto-update-button"_spr)) return;
         auto* menu=typeinfo_cast<CCMenu*>(getChildByID("bottom-menu"));
         if (!menu) return;
         auto* button=CCMenuItemSpriteExtra::create(ButtonSprite::create("Auto Update"),this,menu_selector(DamianUpdateMenu::onUpdate));
         button->setID("auto-update-button"_spr); button->setScale(.45f); menu->addChild(button); menu->updateLayout();
+        log::info("Auto Update button added to the home menu");
     }
     void onUpdate(CCObject*) {
         if (updater::busy()) return;

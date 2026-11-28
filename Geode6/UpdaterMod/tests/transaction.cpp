@@ -36,6 +36,10 @@ int main() {
         require(fs::exists(root/"backup"/"complete.txt"),"Successful update missing record");
         require(read(mods/"unrelated.other.geode")=="leave this alone","Unrelated mod changed");
         require(read(saves/"CCLocalLevels.dat")=="unsaved-looking editor progress" && read(saves/"settings.json")=="keep my settings","Save data changed");
+        write(mods/"OWNER.CASE.geode","old mixed-case filename");
+        write(stage/"case.geode","new case-safe package");
+        commit(mods,root/"case-backup",{{"owner.case",stage/"case.geode",{mods/"OWNER.CASE.geode"}}});
+        require(read(mods/"owner.case.geode")=="new case-safe package","Case-insensitive alias cleanup removed the new package");
         write(stage/"unsafe.geode","bad");write(root/"outside.geode","outside");
         failed=false;
         try {commit(mods,root/"unsafe-backup",{{"owner.bad",stage/"unsafe.geode",{root/"outside.geode"}}});}catch(std::exception const&){failed=true;}

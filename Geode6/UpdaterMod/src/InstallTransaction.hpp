@@ -69,7 +69,7 @@ inline void commit(fs::path const& mods, fs::path const& backup, std::vector<Pac
             if (afterWrite) afterWrite(++count);
         }
         for (auto const& package : packages) for (auto const& old : package.previous)
-            if (old.filename() != fs::path(package.id+".geode")) fs::remove(old);
+            if (fs::exists(old) && !fs::equivalent(old,root/(package.id+".geode"))) fs::remove(old);
         std::ofstream done(backup/"complete.txt"); done << "Update installed. Original packages are retained here.\n";
         done.close(); if (!done) throw std::runtime_error("Could not finish the update record.");
     } catch (...) {
