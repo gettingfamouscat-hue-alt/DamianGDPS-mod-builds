@@ -1,6 +1,12 @@
 name: Build Geode 6 ports
 on:
   workflow_dispatch:
+    inputs:
+      project:
+        description: Build scope
+        type: choice
+        options: [All, RateButton]
+        default: All
   push:
     branches: [geode6-22091]
     paths: ['Geode6/**', '.github/workflows/geode6.yml']
@@ -33,9 +39,11 @@ jobs:
           cli: 'v4.0.2'
           bindings-ref: 42c3eed43010fa531e9bc5d0aca6f3c3c4f49608
           use-lto: false
+          configure-args: ${{ inputs.project == 'RateButton' && '-DGEODE6_PROJECTS=RateButton' || '' }}
       - name: Finish build and report remaining errors
         run: cmake --build Geode6/build --parallel 4 -- -k 40
       - name: Check snapshot field coverage
+        if: inputs.project != 'RateButton'
         run: python3 Geode6/checks/check_snapshot_fields.py Geode6/build/bindings/bindings/Geode/binding
       - uses: actions/upload-artifact@v7
         with:

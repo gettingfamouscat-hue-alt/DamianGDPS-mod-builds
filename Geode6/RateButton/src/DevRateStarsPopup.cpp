@@ -281,8 +281,9 @@ void DevRateStarsPopup::updateStarsToggleVisuals() {
 void DevRateStarsPopup::updateSwitchVisibility() {
     if (!m_switchButton)
         return;
-    auto const show = (m_selectedStars == 10) || (m_selectedStars == Utils::EASY_STARS);
+    auto const show = m_selectedStars == Utils::EASY_STARS;
     m_switchButton->setVisible(show);
+    m_switchButton->setEnabled(show);
     if (m_grandpaLabel) {
         bool const extra = m_selectedStars >= Utils::GRANDPA_FIRST_STARS
             && m_selectedStars <= Utils::GRANDPA_LAST_STARS;

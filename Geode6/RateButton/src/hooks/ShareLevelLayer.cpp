@@ -109,7 +109,9 @@ class $modify(MyShareLevelLayer, ShareLevelLayer) {
         // Ordinary difficulty textures already contain the full name. They
         // receive no second label; the switch sits below the actual caption.
         auto* button = m_fields->switchButton;
-        button->setVisible(m_starsRequested == 10 || m_starsRequested == Utils::EASY_STARS);
+        bool const showSwitch = m_starsRequested == Utils::EASY_STARS;
+        button->setVisible(showSwitch);
+        button->setEnabled(showSwitch);
         auto const world = host->getParent()->convertToWorldSpace({host->getPositionX(),
             bottom - 6.f - button->getScaledContentSize().height * .5f});
         button->setPosition(m_buttonMenu->convertToNodeSpace(world));
