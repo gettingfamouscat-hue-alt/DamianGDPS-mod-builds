@@ -6,7 +6,7 @@ Fix 100% is intentionally excluded. Existing Geode 5 sources and releases remain
 ## Build
 
 Use Geode SDK 6.0.0, CLI 4.0.2, and the official 2.2091 bindings at
-42c3eed43010fa531e9bc5d0aca6f3c3c4f49608. Configure this directory as one CMake
+962a164c347d7e2104ea2f589fea3fb17b28d25e. Configure this directory as one CMake
 project so Platformer Saves links to the matching PersistenceAPI.
 On Windows, use clang-cl 20 or newer (MSVC 14.44 has an internal compiler error
 with Editor Tab API 3). Mac packages include Intel and Apple Silicon.

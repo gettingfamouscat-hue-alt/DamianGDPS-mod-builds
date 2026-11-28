@@ -70,38 +70,6 @@ bool containsCoin(std::string const& levelString) {
 }
 }
 
-class $modify(OfficialGoldCoinUpload, GameLevelManager) {
-    struct Fields {
-        bool coinUpload = false;
-    };
-
-    void uploadLevel(GJGameLevel* level) {
-        m_fields->coinUpload = level && !GoldenCoin::isOnGdps() && containsCoin(level->m_levelString);
-        if (m_fields->coinUpload) {
-            log::info("Official gold coin upload: levelID={}, version={}, userCoinCount={}, objects={}",
-                static_cast<int>(level->m_levelID), level->m_levelVersion,
-                level->m_coins, level->m_objectCount);
-        }
-        GameLevelManager::uploadLevel(level);
-    }
-
-    // The Mac bindings do not expose this optional diagnostic callback.
-#ifndef GEODE_IS_MACOS
-    void onUploadLevelCompleted(std::string response, std::string tag) {
-        if (m_fields->coinUpload) {
-            std::string_view value(response.data(), response.size());
-            // Never log requests, credentials, or arbitrary response bodies.
-            bool numeric = !value.empty() && value.size() <= 12
-                && value.find_first_not_of("-0123456789") == std::string_view::npos;
-            log::info("Official gold coin upload response: code={}, bytes={}",
-                numeric ? std::string(value) : "nonnumeric", value.size());
-            m_fields->coinUpload = false;
-        }
-        GameLevelManager::onUploadLevelCompleted(response, tag);
-    }
-#endif
-};
-
 class $modify(OwnerGoldCoinSprite, CCSprite) {
     void setDisplayFrame(CCSpriteFrame* frame) {
         auto* object = typeinfo_cast<GameObject*>(this);

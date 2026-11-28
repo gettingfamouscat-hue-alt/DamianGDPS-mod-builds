@@ -121,13 +121,26 @@ class $modify(GdpsCopySettings, ShareLevelSettingsLayer) {
         m_fields->requirePassword = require;
         m_fields->passwordInput = input;
         refreshCopySettings();
+#ifdef GEODE_IS_MACOS
+        // Route the native close button through the supported back handler.
+        auto* close = typeinfo_cast<CCMenuItemSpriteExtra*>(getChildByIDRecursive("close-button"));
+        if (!close && m_buttonMenu) close = m_buttonMenu->getChildByType<CCMenuItemSpriteExtra>(0);
+        if (close) close->setTarget(this, menu_selector(GdpsCopySettings::onCopySettingsClose));
+#endif
         return true;
     }
 
+#ifdef GEODE_IS_MACOS
+    void onCopySettingsClose(CCObject*) {
+        if (!saveCopySettings()) return;
+        ShareLevelSettingsLayer::keyBackClicked();
+    }
+#else
     void onClose(CCObject* sender) {
         if (!saveCopySettings()) return;
         ShareLevelSettingsLayer::onClose(sender);
     }
+#endif
 
     void keyBackClicked() {
         if (!saveCopySettings()) return;

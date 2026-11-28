@@ -37,7 +37,7 @@ jobs:
           target: ${{ matrix.target }}
           sdk: '6.0.0'
           cli: 'v4.0.2'
-          bindings-ref: 42c3eed43010fa531e9bc5d0aca6f3c3c4f49608
+          bindings-ref: 962a164c347d7e2104ea2f589fea3fb17b28d25e
           use-lto: false
           configure-args: ${{ inputs.project == 'RateButton' && '-DGEODE6_PROJECTS=RateButton' || '' }}
       - name: Finish build and report remaining errors
