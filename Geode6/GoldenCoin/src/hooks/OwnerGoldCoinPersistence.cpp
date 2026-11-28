@@ -85,6 +85,8 @@ class $modify(OfficialGoldCoinUpload, GameLevelManager) {
         GameLevelManager::uploadLevel(level);
     }
 
+    // The Mac bindings do not expose this optional diagnostic callback.
+#ifndef GEODE_IS_MACOS
     void onUploadLevelCompleted(std::string response, std::string tag) {
         if (m_fields->coinUpload) {
             std::string_view value(response.data(), response.size());
@@ -97,6 +99,7 @@ class $modify(OfficialGoldCoinUpload, GameLevelManager) {
         }
         GameLevelManager::onUploadLevelCompleted(response, tag);
     }
+#endif
 };
 
 class $modify(OwnerGoldCoinSprite, CCSprite) {

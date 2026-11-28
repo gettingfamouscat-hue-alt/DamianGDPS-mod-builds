@@ -393,7 +393,12 @@ void ServerListLayer::onKonami() {
     m_bottomMenu->updateLayout();
 
     Mod::get()->setSavedValue("secret-settings", true);
+#ifdef GEODE_IS_MACOS
+    auto exp = CCParticleSystemQuad::create("explodeEffect.plist", false);
+#else
     auto exp = CCParticleExplosion::create();
+#endif
+    if (!exp) return;
     exp->setStartColor({255,127, 0, 255});
     exp->setEndColorVar({255,127, 0, 255});
     exp->setEndColor({ 255, 0, 0, 255 });

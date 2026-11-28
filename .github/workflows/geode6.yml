@@ -25,6 +25,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: geode-sdk/build-geode-mod@main
         id: build
+        continue-on-error: true
         with:
           path: Geode6
           target: ${{ matrix.target }}
@@ -32,10 +33,12 @@ jobs:
           cli: 'v4.0.2'
           bindings-ref: 42c3eed43010fa531e9bc5d0aca6f3c3c4f49608
           use-lto: false
+      - name: Finish build and report remaining errors
+        run: cmake --build Geode6/build --parallel 4 -- -k 40
       - name: Check snapshot field coverage
         run: python3 Geode6/checks/check_snapshot_fields.py Geode6/build/bindings/bindings/Geode/binding
       - uses: actions/upload-artifact@v7
         with:
           name: Geode6-${{ matrix.target }}
-          path: ${{ steps.build.outputs.build-output }}/*.geode
+          path: Geode6/build/*/*.geode
           if-no-files-found: error
