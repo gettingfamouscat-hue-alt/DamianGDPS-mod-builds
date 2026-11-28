@@ -5,7 +5,7 @@ on:
       project:
         description: Build scope
         type: choice
-        options: [All, RateButton, Staff, Saves, Updater]
+        options: [All, RateButton, Staff, Saves, Updater, Client]
         default: All
   push:
     branches: [geode6-22091]
@@ -39,12 +39,12 @@ jobs:
           cli: 'v4.0.2'
           bindings-ref: 962a164c347d7e2104ea2f589fea3fb17b28d25e
           use-lto: false
-          configure-args: ${{ inputs.project == 'Updater' && '-DGEODE6_PROJECTS=UpdaterMod' || inputs.project == 'RateButton' && '-DGEODE6_PROJECTS=RateButton' || inputs.project == 'Staff' && '"-DGEODE6_PROJECTS=RateButton;MapMod"' || inputs.project == 'Saves' && '"-DGEODE6_PROJECTS=PersistenceAPI;PlatformerSaves"' || '' }}
+          configure-args: ${{ inputs.project == 'Client' && '"-DGEODE6_PROJECTS=UpdaterMod;VersusNavigation"' || inputs.project == 'Updater' && '-DGEODE6_PROJECTS=UpdaterMod' || inputs.project == 'RateButton' && '-DGEODE6_PROJECTS=RateButton' || inputs.project == 'Staff' && '"-DGEODE6_PROJECTS=RateButton;MapMod"' || inputs.project == 'Saves' && '"-DGEODE6_PROJECTS=PersistenceAPI;PlatformerSaves"' || '' }}
       - name: Finish build and report remaining errors
         if: steps.build.outcome == 'failure'
         run: cmake --build Geode6/build --parallel 4 -- -k 40
       - name: Check snapshot field coverage
-        if: inputs.project != 'RateButton' && inputs.project != 'Staff' && inputs.project != 'Updater'
+        if: inputs.project != 'RateButton' && inputs.project != 'Staff' && inputs.project != 'Updater' && inputs.project != 'Client'
         run: python3 Geode6/checks/check_snapshot_fields.py Geode6/build/bindings/bindings/Geode/binding
       - name: Test updater installation and rollback
         run: |

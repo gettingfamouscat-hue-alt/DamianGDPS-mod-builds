@@ -1,4 +1,5 @@
 #pragma once
+#include "UpdatePolicy.hpp"
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
@@ -35,8 +36,10 @@ inline void replace(fs::path const& source, fs::path const& target) {
 struct Package { std::string id; fs::path staged; std::vector<fs::path> previous; };
 struct Original { fs::path target, backup; bool existed = false; };
 /** All sources must already have passed hash, metadata and dependency checks. */
-inline void commit(fs::path const& mods, fs::path const& backup, std::vector<Package> const& packages,
+inline void commit(fs::path const& mods, fs::path const& backup, std::vector<Package> const& requested,
                    std::function<void(size_t)> afterWrite = {}) {
+    std::vector<Package> packages;
+    for (auto const& package : requested) if (autoUpdateAllowed(package.id)) packages.push_back(package);
     auto root = fs::canonical(mods);
     if (packages.empty() || fs::exists(backup)) throw std::runtime_error("Invalid update transaction.");
     fs::create_directories(backup);

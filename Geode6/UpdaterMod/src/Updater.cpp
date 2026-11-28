@@ -146,6 +146,7 @@ void run(Context context, std::shared_ptr<State> s) {
             plan.emplace(id,inspect(temporary,id,expected.at(id).second));
         }
         if (plan.size()!=expected.size()) throw std::runtime_error("The downloaded pack is missing mods.");
+        std::erase_if(plan,[](auto const& entry) { return !autoUpdateAllowed(entry.first); });
         // Resolve required dependencies before touching any installed files.
         std::set<std::string> visited;
         while (visited.size()<plan.size()) {
@@ -162,6 +163,11 @@ void run(Context context, std::shared_ptr<State> s) {
                     continue;
                 }
                 if (!install::safeID(dep)) throw std::runtime_error("Invalid required dependency.");
+                if (!autoUpdateAllowed(dep)) {
+                    if (!context.installed.contains(dep) || !context.enabled.contains(dep) || !dependency.getVersion().compare(context.installed.at(dep).getVersion()))
+                        throw std::runtime_error("Platformer Saves is excluded from Auto Update. Install or enable a compatible version manually if required.");
+                    continue;
+                }
                 if (!plan.contains(dep)) {
                     s->status("Downloading required mod: "+dep);
                     auto url="https://api.geode-sdk.org/v1/mods/"+dep+"/versions/latest?gd="+context.gd+"&platforms="+GEODE_PLATFORM_SHORT_IDENTIFIER+
@@ -223,7 +229,7 @@ void run(Context context, std::shared_ptr<State> s) {
         std::vector<install::Package> packages;
         for (auto const& [id,candidate]:plan) packages.push_back({id,candidate.staged,old[id]});
         install::commit(context.mods,context.backups/transaction,packages);
-        for (auto const& id:willEnable) if (!context.enabled.contains(id) && context.installed.contains(id)) s->enable.push_back(id);
+        for (auto const& id:willEnable) if (autoUpdateAllowed(id) && !context.enabled.contains(id) && context.installed.contains(id)) s->enable.push_back(id);
         s->status("Mods updated. Restarting Geometry Dash...");
     } catch (std::exception const& error) {
         log::error("GDPS mod update stopped: {}",error.what());

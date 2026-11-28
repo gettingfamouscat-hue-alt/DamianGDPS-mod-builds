@@ -40,6 +40,15 @@ int main() {
         write(stage/"case.geode","new case-safe package");
         commit(mods,root/"case-backup",{{"owner.case",stage/"case.geode",{mods/"OWNER.CASE.geode"}}});
         require(read(mods/"owner.case.geode")=="new case-safe package","Case-insensitive alias cleanup removed the new package");
+        write(mods/"sabe.platformersaves.geode","keep my existing platformer version");
+        write(mods/"my-platformer-copy.geode","keep my platformer alias");
+        write(stage/"plat.geode","do not install this platformer update");
+        write(stage/"next.geode","ordinary update");
+        commit(mods,root/"protected-backup",{{"sabe.platformersaves",stage/"plat.geode",{mods/"sabe.platformersaves.geode",mods/"my-platformer-copy.geode"}},
+            {"owner.next",stage/"next.geode",{}}});
+        require(read(mods/"sabe.platformersaves.geode")=="keep my existing platformer version" && read(mods/"my-platformer-copy.geode")=="keep my platformer alias","Platformer Saves was changed by Auto Update");
+        require(fs::exists(stage/"plat.geode") && read(mods/"owner.next.geode")=="ordinary update","Protected mod was staged or ordinary update was skipped");
+        require(read(root/"protected-backup"/"files.txt").find("platformer")==std::string::npos,"Excluded mod was included in the transaction");
         write(stage/"unsafe.geode","bad");write(root/"outside.geode","outside");
         failed=false;
         try {commit(mods,root/"unsafe-backup",{{"owner.bad",stage/"unsafe.geode",{root/"outside.geode"}}});}catch(std::exception const&){failed=true;}

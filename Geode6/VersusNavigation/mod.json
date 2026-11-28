@@ -1,0 +1,9 @@
+{
+  "geode":"6.0.0",
+  "gd":{"win":"2.2091","mac":"2.2091","android":"2.2091"},
+  "id":"damian.versus-navigation",
+  "name":"Versus Back Key Fix",
+  "version":"v1.0.0",
+  "developer":"damian",
+  "description":"Make Escape and Back use Tipp7 Ranked's existing back action."
+}
