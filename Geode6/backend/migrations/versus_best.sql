@@ -1,0 +1,2 @@
+ALTER TABLE versus_matches ADD COLUMN p1Best DOUBLE NOT NULL DEFAULT 0, ADD COLUMN p2Best DOUBLE NOT NULL DEFAULT 0;
+UPDATE versus_matches SET p1Best = GREATEST(p1Best, p1Percent), p2Best = GREATEST(p2Best, p2Percent);

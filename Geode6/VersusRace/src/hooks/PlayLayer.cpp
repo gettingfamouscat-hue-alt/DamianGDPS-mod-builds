@@ -15,6 +15,8 @@ class $modify(VersusPlayLayer, PlayLayer) {
         SimplePlayer* icons[2]{};
         CCLabelBMFont* names[2]{};
         CCLabelBMFont* percents[2]{};
+        CCLabelBMFont* bests[2]{};
+        float bestPercent = 0.f;
         CCLayerColor* bars[2]{};
         CCSprite* hearts[2]{};
         CCLabelBMFont* lifeCounts[2]{};
@@ -56,6 +58,10 @@ class $modify(VersusPlayLayer, PlayLayer) {
             auto* pct=CCLabelBMFont::create("0%","bigFont.fnt");pct->setScale(.44f);
             pct->setAnchorPoint({side==0?0.f:1.f,.5f});
             pct->setPosition({edge+direction*55.f,-17.f});hud->addChild(pct);m_fields->percents[side]=pct;
+            auto* best=CCLabelBMFont::create("Best: 0%","bigFont.fnt"); best->setScale(.28f);
+            best->setAnchorPoint({side==0?0.f:1.f,.5f}); best->setPosition({edge+direction*55.f,-35.f});
+            best->setID(side==0?"versus-your-best"_spr:"versus-opponent-best"_spr);
+            hud->addChild(best);m_fields->bests[side]=best;
             auto* heart=CCSprite::create("versus-heart.png"_spr);
             if(heart){heart->setScale(.31f);heart->setPosition({edge+direction*110.f,-17.f});hud->addChild(heart);}
             m_fields->hearts[side]=heart;
@@ -83,6 +89,7 @@ class $modify(VersusPlayLayer, PlayLayer) {
         if(!m_fields->overlay)return;
         auto snap=VersusManager::get().last();
         snap.myPercent=this->getCurrentPercent();
+        m_fields->bestPercent=std::max(m_fields->bestPercent,CompletionFlow::reportablePercent(snap.myPercent,m_fields->completed));
         auto* gm=GameManager::sharedState();
         for(int side=0;side<2;++side) {
             int icon=side==0?snap.myIcon:snap.oppIcon;
@@ -101,6 +108,8 @@ class $modify(VersusPlayLayer, PlayLayer) {
             float percent=std::clamp(side==0?snap.myPercent:snap.oppPercent,0.f,100.f);
             auto* percentLabel=m_fields->percents[side];
             if(percentLabel)percentLabel->setString(fmt::format("{:.0f}%",percent).c_str());
+            float best=std::clamp(side==0?std::max(snap.myBest,m_fields->bestPercent):snap.oppBest,0.f,100.f);
+            if(auto* label=m_fields->bests[side])label->setString(fmt::format("Best: {}%",static_cast<int>(best)).c_str());
             if(auto* bar=m_fields->bars[side])bar->setContentSize({std::max(1.f,(CCDirector::sharedDirector()->getWinSize().width/2.f-115.f)*percent/100.f),5.f});
             int remaining=std::clamp(side==0?snap.myLives:snap.oppLives,0,3);
             auto* heart=m_fields->hearts[side];
@@ -176,6 +185,8 @@ class $modify(VersusPlayLayer, PlayLayer) {
         if (!m_fields->overlay || !VersusManager::get().inMatch() || m_fields->endShown)
             return;
 
+        m_fields->bestPercent=std::max(m_fields->bestPercent,CompletionFlow::reportablePercent(this->getCurrentPercent(),m_fields->completed));
+
         if (m_fields->deathCooldown > 0.f)
             m_fields->deathCooldown -= dt;
 
@@ -185,7 +196,7 @@ class $modify(VersusPlayLayer, PlayLayer) {
         if (m_fields->percentAcc >= 0.75f) {
             m_fields->percentAcc = 0.f;
             VersusManager::get().reportPercent(CompletionFlow::reportablePercent(
-                this->getCurrentPercent(), m_fields->completed));
+                this->getCurrentPercent(), m_fields->completed),m_fields->bestPercent);
             this->refreshOverlay();
         }
         if (m_fields->pollAcc >= 1.0f) {
@@ -196,6 +207,7 @@ class $modify(VersusPlayLayer, PlayLayer) {
 
     void destroyPlayer(PlayerObject* player, GameObject* object) {
         bool wasDead = m_player1 ? m_player1->m_isDead : false;
+        float percent=m_fields->overlay ? CompletionFlow::reportablePercent(this->getCurrentPercent(),m_fields->completed) : 0.f;
 
         PlayLayer::destroyPlayer(player, object);
 
@@ -206,7 +218,8 @@ class $modify(VersusPlayLayer, PlayLayer) {
 
         if (player == m_player1 && m_player1 && m_player1->m_isDead && !wasDead) {
             m_fields->deathCooldown = 1.25f;
-            VersusManager::get().reportDeath();
+            m_fields->bestPercent=std::max(m_fields->bestPercent,percent);
+            VersusManager::get().reportDeath(percent,m_fields->bestPercent);
             this->refreshOverlay();
         }
     }

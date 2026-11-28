@@ -19,6 +19,8 @@ struct VersusSnapshot {
     int oppLives = 3;
     float myPercent = 0.f;
     float oppPercent = 0.f;
+    float myBest = 0.f;
+    float oppBest = 0.f;
     bool youWin = false;
     bool youLose = false;
     int winner = 0;
@@ -38,8 +40,8 @@ public:
     void startSearch();
     void cancelSearch();
     void leaveMatch();
-    void reportPercent(float percent);
-    void reportDeath();
+    void reportPercent(float percent, float best = -1.f);
+    void reportDeath(float percent, float best);
     void pollState();
     void markInGame();
 

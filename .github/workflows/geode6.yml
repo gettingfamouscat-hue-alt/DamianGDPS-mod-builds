@@ -5,7 +5,7 @@ on:
       project:
         description: Build scope
         type: choice
-        options: [All, RateButton, Saves]
+        options: [All, RateButton, Staff, Saves]
         default: All
   push:
     branches: [geode6-22091]
@@ -39,12 +39,12 @@ jobs:
           cli: 'v4.0.2'
           bindings-ref: 962a164c347d7e2104ea2f589fea3fb17b28d25e
           use-lto: false
-          configure-args: ${{ inputs.project == 'RateButton' && '-DGEODE6_PROJECTS=RateButton' || inputs.project == 'Saves' && '"-DGEODE6_PROJECTS=PersistenceAPI;PlatformerSaves"' || '' }}
+          configure-args: ${{ inputs.project == 'RateButton' && '-DGEODE6_PROJECTS=RateButton' || inputs.project == 'Staff' && '"-DGEODE6_PROJECTS=RateButton;VersusRace"' || inputs.project == 'Saves' && '"-DGEODE6_PROJECTS=PersistenceAPI;PlatformerSaves"' || '' }}
       - name: Finish build and report remaining errors
         if: steps.build.outcome == 'failure'
         run: cmake --build Geode6/build --parallel 4 -- -k 40
       - name: Check snapshot field coverage
-        if: inputs.project != 'RateButton'
+        if: inputs.project != 'RateButton' && inputs.project != 'Staff'
         run: python3 Geode6/checks/check_snapshot_fields.py Geode6/build/bindings/bindings/Geode/binding
       - uses: actions/upload-artifact@v7
         if: always()

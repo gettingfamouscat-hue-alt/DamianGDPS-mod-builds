@@ -5,6 +5,7 @@
 
 #include <chrono>
 #include <thread>
+#include <algorithm>
 
 #if __has_include(<km7dev.server_api/ServerAPIEvents.hpp>)
 #include <km7dev.server_api/ServerAPIEvents.hpp>
@@ -66,6 +67,7 @@ VersusSnapshot VersusManager::parseJson(matjson::Value const& v) const {
             s.myColor2=static_cast<int>(icon["color2"].asInt().unwrapOr(3));}
         s.myLives = static_cast<int>(you["lives"].asInt().unwrapOr(3));
         s.myPercent = static_cast<float>(you["percent"].asDouble().unwrapOr(0.0));
+        s.myBest = static_cast<float>(you["best"].asDouble().unwrapOr(s.myPercent));
     }
     if (v.contains("opponent")) {
         auto opp = v["opponent"];
@@ -76,6 +78,7 @@ VersusSnapshot VersusManager::parseJson(matjson::Value const& v) const {
         s.oppName = opp["userName"].asString().unwrapOr("?");
         s.oppLives = static_cast<int>(opp["lives"].asInt().unwrapOr(3));
         s.oppPercent = static_cast<float>(opp["percent"].asDouble().unwrapOr(0.0));
+        s.oppBest = static_cast<float>(opp["best"].asDouble().unwrapOr(s.oppPercent));
     }
     s.winner = static_cast<int>(v["winner"].asInt().unwrapOr(0));
     s.youWin = v.contains("youWin") ? v["youWin"].asBool().unwrapOr(false) : false;
@@ -84,7 +87,12 @@ VersusSnapshot VersusManager::parseJson(matjson::Value const& v) const {
 }
 
 void VersusManager::applySnapshot(VersusSnapshot const& snap) {
-    m_last = snap;
+    auto next = snap;
+    if (snap.matchID == m_last.matchID && snap.matchID > 0) {
+        next.myBest = std::max(next.myBest, m_last.myBest);
+        next.oppBest = std::max(next.oppBest, m_last.oppBest);
+    }
+    m_last = next;
     if (!snap.phase.empty())
         m_phase = snap.phase;
     if (snap.matchID > 0)
@@ -227,22 +235,25 @@ void VersusManager::markInGame() {
         m_phase = "ingame";
 }
 
-void VersusManager::reportPercent(float percent) {
+void VersusManager::reportPercent(float percent, float best) {
     if (m_matchID <= 0)
         return;
     this->postAsync("state.php", {
         {"matchID", std::to_string(m_matchID)},
         {"percent", fmt::format("{:.2f}", percent)},
+        {"best", fmt::format("{:.2f}", std::max(percent, best))},
     }, nullptr);
 }
 
-void VersusManager::reportDeath() {
+void VersusManager::reportDeath(float percent, float best) {
     if (m_matchID <= 0 || m_pendingDeath)
         return;
     m_pendingDeath = true;
     this->postAsync("state.php", {
         {"matchID", std::to_string(m_matchID)},
         {"death", "1"},
+        {"percent", fmt::format("{:.2f}", percent)},
+        {"best", fmt::format("{:.2f}", std::max(percent, best))},
     }, [this](VersusSnapshot const&) {
         m_pendingDeath = false;
     });
