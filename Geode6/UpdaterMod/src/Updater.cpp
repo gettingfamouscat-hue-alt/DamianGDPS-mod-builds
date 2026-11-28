@@ -203,7 +203,7 @@ void run(Context context, std::shared_ptr<State> s) {
                     throw std::runtime_error(id+" is incompatible with "+bad.getID()+". Disable the conflicting mod before updating.");
         }
         for (auto const& [id,candidate]:plan) if (context.locations.contains(id))
-            if (fs::canonical(context.locations.at(id).parent_path())!=fs::canonical(context.mods))
+            if (fs::is_symlink(context.locations.at(id)) || fs::canonical(context.locations.at(id).parent_path())!=fs::canonical(context.mods))
                 throw std::runtime_error(id+" is installed outside the default Mods folder. Move its package there before updating.");
         int expectedPhase=0;
         if (!s->phase.compare_exchange_strong(expectedPhase,2)) { cancelled(s); throw std::runtime_error("Could not start installation."); }
@@ -211,7 +211,10 @@ void run(Context context, std::shared_ptr<State> s) {
         std::map<std::string,std::vector<fs::path>> old;
         for (auto const& entry:fs::directory_iterator(context.mods)) {
             if (entry.path().extension()!=".geode") continue;
-            if (fs::is_symlink(entry.path())) throw std::runtime_error("Mods contains a linked package. Move it out before updating.");
+            if (fs::is_symlink(entry.path())) {
+                if (plan.contains(entry.path().stem().string())) throw std::runtime_error("An updated mod is a linked package. Move it into Mods before updating.");
+                continue;
+            }
             auto metadata=ModMetadata::createFromGeodeFile(path(entry.path()));
             if (!metadata.wasCompletelyUnparseable()) old[std::string(metadata.getID())].push_back(entry.path());
             if (plan.contains(entry.path().stem().string()) && !metadata.wasCompletelyUnparseable() && std::string(metadata.getID())!=entry.path().stem().string())
