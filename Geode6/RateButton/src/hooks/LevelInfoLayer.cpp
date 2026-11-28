@@ -120,7 +120,7 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
 
         auto win = CCDirector::sharedDirector()->getWinSize();
         if (!m_fields->staffPositionSaved) {
-            m_fields->staffPosition = {30.f, win.height / 2.f + 30.f};
+            m_fields->staffPosition = CCPoint{30.f, win.height / 2.f + 30.f};
             for (auto const* id : {"left-side-menu", "right-side-menu"})
                 if (auto* nativeMenu = getChildByID(id))
                     if (auto* nativeButton = nativeMenu->getChildByID("mod-rate-button"))
