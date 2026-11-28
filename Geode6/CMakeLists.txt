@@ -21,7 +21,7 @@ foreach(api IN ITEMS "ServerAPI|km7dev.server_api" "GDPSSwitcher|km7dev.gdps-swi
     file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/${folder}/include/" DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}/headers/${id}")
 endforeach()
 include_directories(SYSTEM "${CMAKE_CURRENT_SOURCE_DIR}/headers")
-set(GEODE6_PROJECTS "ServerAPI;GDPSSwitcher;HalfBlockTab;GoldenCoin;RateButton;VersusRace;PersistenceAPI;PlatformerSaves;GrandpaDemon" CACHE STRING "Projects to build")
+set(GEODE6_PROJECTS "ServerAPI;GDPSSwitcher;HalfBlockTab;GoldenCoin;RateButton;MapMod;PersistenceAPI;PlatformerSaves;GrandpaDemon" CACHE STRING "Projects to build")
 foreach(mod IN LISTS GEODE6_PROJECTS)
     add_subdirectory(${mod})
 endforeach()

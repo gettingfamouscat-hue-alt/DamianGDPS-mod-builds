@@ -1,0 +1,25 @@
+{
+  "geode": "6.0.0",
+  "gd": {
+    "win": "2.2091",
+    "mac": "2.2091",
+    "android": "2.2091",
+    "ios": "2.2091"
+  },
+  "id": "damian.the-map",
+  "name": "Damian Map",
+  "version": "v1.0.0",
+  "developer": "damian",
+  "description": "The GDPS Map, with levels unlocked in order.",
+  "dependencies": {
+    "geode.node-ids": ">=v1.24.0"
+  },
+  "settings": {
+    "server-url": {
+      "type": "string",
+      "name": "GDPS Base URL",
+      "default": "http://192.168.0.143/gdps",
+      "description": "The GDPS URL used to load the Map path."
+    }
+  }
+}

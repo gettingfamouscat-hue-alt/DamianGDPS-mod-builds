@@ -1,0 +1,1 @@
+This custom Versus mod is retired. It is excluded from the default build and all current install packages. Use Tipp7 Versus instead. The GDPS Map is now the standalone MapMod project. This source is retained for reference only.
