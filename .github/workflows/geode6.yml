@@ -41,6 +41,7 @@ jobs:
           use-lto: false
           configure-args: ${{ inputs.project == 'RateButton' && '-DGEODE6_PROJECTS=RateButton' || '' }}
       - name: Finish build and report remaining errors
+        if: steps.build.outcome == 'failure'
         run: cmake --build Geode6/build --parallel 4 -- -k 40
       - name: Check snapshot field coverage
         if: inputs.project != 'RateButton'

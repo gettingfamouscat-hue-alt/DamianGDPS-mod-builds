@@ -50,7 +50,10 @@ bool DevRateStarsPopup::init(int levelId) {
     m_starsOffMark->setVisible(false);
     m_starsOffMark->setID("stars-award-off-mark"_spr);
     m_starsToggleButton->addChild(m_starsOffMark);
-    m_starsOffMark->setPosition(m_starsToggleSprite->getContentSize() / 2.f);
+    // The star is scaled inside its menu item. Align in the button's space.
+    m_starsOffMark->setAnchorPoint({ .5f, .5f });
+    m_starsOffMark->setPosition(m_starsToggleButton->convertToNodeSpace(
+        m_starsToggleSprite->convertToWorldSpace(m_starsToggleSprite->getContentSize() / 2.f)));
 
     /*
         FEATURE BUTTON LOGIC
