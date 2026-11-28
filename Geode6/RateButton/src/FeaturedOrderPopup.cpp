@@ -85,12 +85,20 @@ void FeaturedOrderPopup::onSubmit(CCObject*) {
 }
 void FeaturedOrderPopup::onCancel(CCObject*) { onClose(nullptr); }
 void FeaturedOrderPopup::onDaily(CCObject*) {
-    if (!SessionManager::isElderMod()) return;
-    GameLevelManager::sharedState()->uploadComment("!daily", CommentType::Level, m_level, 0); onClose(nullptr);
+    setTimedLevel(GJTimedLevelType::Daily);
 }
 void FeaturedOrderPopup::onWeekly(CCObject*) {
-    if (!SessionManager::isElderMod()) return;
-    GameLevelManager::sharedState()->uploadComment("!weekly", CommentType::Level, m_level, 0); onClose(nullptr);
+    setTimedLevel(GJTimedLevelType::Weekly);
+}
+void FeaturedOrderPopup::setTimedLevel(GJTimedLevelType type) {
+    if (m_pending || !SessionManager::isElderMod()) return;
+    m_pending = true; update(); auto weak = WeakRef(this);
+    StaffRatingClient::setTimedLevel(m_level, type, [weak](bool ok, std::string error, matjson::Value) {
+        auto self = weak.lock(); if (!self) return;
+        self->m_pending = false; self->update();
+        if (!ok) { FLAlertLayer::create("Could not save", error, "OK")->show(); return; }
+        self->onClose(nullptr);
+    });
 }
 FeaturedOrderPopup* FeaturedOrderPopup::create(int level) {
     auto* p = new FeaturedOrderPopup(); if (p->init(level)) { p->autorelease(); return p; } delete p; return nullptr;

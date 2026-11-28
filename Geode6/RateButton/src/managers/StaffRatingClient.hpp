@@ -7,4 +7,5 @@ using Fields = std::map<std::string, std::string>;
 using Callback = std::function<void(bool, std::string, matjson::Value)>;
 void request(int level, std::string action, Fields fields, Callback done);
 void refreshLevel(int level);
+void setTimedLevel(int level, GJTimedLevelType type, Callback done);
 }

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/FeaturedOrder.php';
+require_once __DIR__ . '/TimedLevelService.php';
 final class StaffRating {
     private PDO $db;
     private $roles;
@@ -15,8 +16,10 @@ final class StaffRating {
     public function handle(int $actor, array $input): array {
         $access = $this->roles->access($actor);
         $action = $input['action'] ?? '';
-        if (!is_string($action) || !in_array($action, ['read', 'stars', 'featured', 'send', 'demon'], true))
+        if (!is_string($action) || !in_array($action, ['read', 'stars', 'featured', 'send', 'demon', 'daily', 'weekly'], true))
             throw new DomainException('Unknown rating action.', 400);
+        if ($action === 'daily' || $action === 'weekly')
+            return TimedLevelService::set($this->db, $this->roles, $actor, self::number($input['levelID'] ?? ''), $action === 'daily' ? 0 : 1);
         if (empty($access['canSuggest']) || (in_array($action, ['stars', 'demon'], true) && empty($access['canRate']))
             || ($action === 'demon' && empty($access['canSetDemon']))
             || ($action === 'featured' && empty($access['canFeature'])))

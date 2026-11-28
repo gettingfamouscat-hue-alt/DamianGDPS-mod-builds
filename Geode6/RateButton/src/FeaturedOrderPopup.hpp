@@ -16,6 +16,7 @@ class FeaturedOrderPopup : public Popup {
     void onCancel(CCObject*);
     void onDaily(CCObject*);
     void onWeekly(CCObject*);
+    void setTimedLevel(GJTimedLevelType);
 public:
     static FeaturedOrderPopup* create(int level);
 };

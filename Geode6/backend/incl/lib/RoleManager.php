@@ -29,6 +29,8 @@ class RoleManager {
             'canSuggest' => (bool)$send,
             'canFeature' => (bool)($rate && $this->gs->checkPermission($accountID, 'commandFeature')),
             'canSetFire' => (bool)($rate && $this->gs->checkPermission($accountID, 'commandEpic')),
+            'canSetDaily' => (bool)($active && $this->gs->isElderMod($accountID) && $this->gs->checkPermission($accountID, 'commandDaily')),
+            'canSetWeekly' => (bool)($active && $this->gs->isElderMod($accountID) && $this->gs->checkPermission($accountID, 'commandWeekly')),
             'canManageRoles' => (bool)($active && $accountID === $this->owner && (int)$account['isAdmin'] === 1),
             'accessLevel' => $rate ? 2 : ($send ? 1 : 0),
         ];

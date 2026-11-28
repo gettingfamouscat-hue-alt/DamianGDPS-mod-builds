@@ -1,6 +1,7 @@
 #include "StaffRatingClient.hpp"
 #include "../utils/Utils.hpp"
 #include <Geode/binding/GJAccountManager.hpp>
+#include <Geode/binding/DailyLevelPage.hpp>
 #include <Geode/utils/web.hpp>
 #include <thread>
 using namespace geode::prelude;
@@ -48,5 +49,13 @@ void refreshLevel(int level) {
     auto* scene = CCDirector::sharedDirector()->getRunningScene();
     if (scene) if (auto* page = scene->getChildByType<LevelInfoLayer>(0))
         if (page->m_level && static_cast<int>(page->m_level->m_levelID) == level) page->downloadLevel();
+}
+void setTimedLevel(int level, GJTimedLevelType type, Callback done) {
+    request(level, type == GJTimedLevelType::Weekly ? "weekly" : "daily", {},
+        [type, done = std::move(done)](bool ok, std::string error, matjson::Value body) mutable {
+            if (ok) GameLevelManager::sharedState()->resetDailyLevelState(type);
+            done(ok, std::move(error), std::move(body));
+            if (ok) if (auto* page = DailyLevelPage::create(type)) page->show();
+        });
 }
 }

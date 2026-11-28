@@ -284,20 +284,17 @@ void DevRateStarsPopup::openEasySwitchPopup() {
     }
 }
 
-void DevRateStarsPopup::onDaily(CCObject *) {
-    GameLevelManager::sharedState()->uploadComment(
-        "!daily", CommentType::Level, m_levelId, 0
-    );
-
-    this->onClose(nullptr);
-}
-
-void DevRateStarsPopup::onWeekly(CCObject *) {
-    GameLevelManager::sharedState()->uploadComment(
-        "!weekly", CommentType::Level, m_levelId, 0
-    );
-
-    this->onClose(nullptr);
+void DevRateStarsPopup::onDaily(CCObject *) { setTimedLevel(GJTimedLevelType::Daily); }
+void DevRateStarsPopup::onWeekly(CCObject *) { setTimedLevel(GJTimedLevelType::Weekly); }
+void DevRateStarsPopup::setTimedLevel(GJTimedLevelType type) {
+    if (m_pending || !SessionManager::isElderMod()) return;
+    m_pending = true; updateSubmit(); auto weak = WeakRef(this);
+    StaffRatingClient::setTimedLevel(m_levelId, type, [weak](bool ok, std::string error, matjson::Value) {
+        auto self = weak.lock(); if (!self) return;
+        self->m_pending = false; self->updateSubmit();
+        if (!ok) { FLAlertLayer::create("Could not save", error, "OK")->show(); return; }
+        self->onClose(nullptr);
+    });
 }
 
 void DevRateStarsPopup::refreshLevelPage() const {

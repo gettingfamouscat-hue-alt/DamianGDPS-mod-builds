@@ -59,6 +59,7 @@ protected:
     void onIncrease(CCObject *);
     void onDaily(CCObject *);
     void onWeekly(CCObject *);
+    void setTimedLevel(GJTimedLevelType);
     void onSendOnly(CCObject *);
     void onCancel(CCObject *);
     void onSubmit(CCObject *);
