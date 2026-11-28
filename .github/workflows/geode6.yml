@@ -5,7 +5,7 @@ on:
       project:
         description: Build scope
         type: choice
-        options: [All, RateButton]
+        options: [All, RateButton, Saves]
         default: All
   push:
     branches: [geode6-22091]
@@ -39,7 +39,7 @@ jobs:
           cli: 'v4.0.2'
           bindings-ref: 962a164c347d7e2104ea2f589fea3fb17b28d25e
           use-lto: false
-          configure-args: ${{ inputs.project == 'RateButton' && '-DGEODE6_PROJECTS=RateButton' || '' }}
+          configure-args: ${{ inputs.project == 'RateButton' && '-DGEODE6_PROJECTS=RateButton' || inputs.project == 'Saves' && '"-DGEODE6_PROJECTS=PersistenceAPI;PlatformerSaves"' || '' }}
       - name: Finish build and report remaining errors
         if: steps.build.outcome == 'failure'
         run: cmake --build Geode6/build --parallel 4 -- -k 40

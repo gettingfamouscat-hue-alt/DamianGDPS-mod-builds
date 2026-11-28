@@ -20,19 +20,18 @@ namespace persistenceAPI {
         SABE_PA_DLL inline int getGameObjectIndex(GameObject* i_object) {
             if (i_object == nullptr) return -1;
 
-            int l_index = i_object->m_uniqueID-m_fields->m_uniqueIDBase;
-            if (l_index > -1) {
-                return l_index;
-            }
-            l_index = m_objects->indexOfObject(i_object);
-            if (l_index > -1) {
-                return l_index;
-            }
-            if (i_object == m_player1) {
-                return -2;
-            }
-            if (i_object == m_player2) {
-                return -3;
+            if (i_object == m_player1) return -2;
+            if (i_object == m_player2) return -3;
+            if (m_objects) {
+                int l_index = i_object->m_uniqueID - m_fields->m_uniqueIDBase;
+                // A game update or another mod can change the ID sequence.
+                // Only use the shortcut when it points to this exact object.
+                if (l_index >= 0 && static_cast<unsigned int>(l_index) < m_objects->count()
+                    && m_objects->objectAtIndex(l_index) == i_object) {
+                    return l_index;
+                }
+                l_index = m_objects->indexOfObject(i_object);
+                if (l_index >= 0) return l_index;
             }
             geode::log::info("@@@@@@@@@@@@@@ UNKNOWN GAMEOBJECT BEING SAVED @@@@@@@@@@@@@@@");
             return -404;
@@ -40,6 +39,10 @@ namespace persistenceAPI {
 
         SABE_PA_DLL GameObject* getGameObject(int i_index) {
             if (i_index > -1) {
+                if (!m_objects || static_cast<unsigned int>(i_index) >= m_objects->count()) {
+                    geode::log::warn("Saved object index {} is outside the current level", i_index);
+                    return nullptr;
+                }
                 return static_cast<GameObject*>(m_objects->objectAtIndex(i_index));
             }
             if (i_index == -2) {
