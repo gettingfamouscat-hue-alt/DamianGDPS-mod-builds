@@ -42,4 +42,16 @@ foreach(['bad:name','bad|name','bad#name',str_repeat('x',81)] as $bad) { $v=$lis
 $v=$gauntlet;$v['levels']='101,102';denied(fn()=>$service->save(1,$v),400);
 $v=$gauntlet;$v['id']='63';denied(fn()=>$service->save(1,$v),400);
 expect(!$db->inTransaction(),'Transaction leaked');
+// Exercise the real native Top Lists endpoint on this connection's fixtures.
+$db->exec("CREATE TEMPORARY TABLE users (userID INT, extID INT, userName VARCHAR(100))");
+$db->exec("INSERT INTO users VALUES (2,2,'CollectionOwner')");
+$db->exec("UPDATE lists SET starStars=0,starFeatured=0");
+$db->exec("INSERT INTO lists (listName,listDesc,listlevels,accountID,starDifficulty,unlisted) VALUES ('Hidden route','','101',2,-1,1)");
+$GLOBALS['gdpsDatabase']=$db;
+$_POST=['type'=>'6','page'=>'0'];
+ob_start(); include $argv[1].'/incl/levelpacks/getGJLevelLists.php'; $wire=ob_get_clean();
+expect(str_contains($wire, '2:My route:') && str_contains($wire, ':51:103,102,101:'), 'Tool list missing from native Top Lists');
+expect(!str_contains($wire,'Hidden route'), 'Private list leaked into Top Lists');
+expect(str_contains($wire,':55:0:') && (int)$db->query('SELECT MAX(starStars) FROM lists')->fetchColumn()===0, 'Browsing awarded list rewards');
+expect(str_contains($wire,'#1:0:10#'), 'Native list pagination is invalid');
 echo "PASS: list create/edit/ownership, description encoding, gauntlet order/custom names/admin permission, explicit replacement, missing/private/repeated/invalid IDs, safe names. No real collections changed.\n";
