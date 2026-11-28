@@ -1,0 +1,39 @@
+{
+  "geode": "6.0.0",
+  "gd": {
+    "win": "2.2091",
+    "android": "2.2091",
+    "mac": "2.2091",
+    "ios": "2.2091"
+  },
+  "id": "damian.versus",
+  "name": "Damian Versus",
+  "version": "v1.2.0",
+  "developer": "Damian GDPS",
+  "description": "GDPS Versus races and an unlockable Map of GDPS levels.",
+  "tags": [
+    "online",
+    "utility",
+    "gdps"
+  ],
+  "settings": {
+    "server-url": {
+      "name": "GDPS Base URL",
+      "description": "No trailing slash. Versus API is at {url}/versus/",
+      "type": "string",
+      "default": "http://192.168.0.143/gdps"
+    }
+  },
+  "resources": {
+    "files": [
+      "resources/versus-heart.png"
+    ]
+  },
+  "dependencies": {
+    "geode.node-ids": ">=v1.24.0",
+    "km7dev.server_api": {
+      "version": ">=v5.0.0-beta.1",
+      "required": false
+    }
+  }
+}

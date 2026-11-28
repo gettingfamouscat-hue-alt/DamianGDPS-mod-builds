@@ -1,0 +1,47 @@
+# 4.0.1
+- Updated GitHub link and removed old server and site links
+# 4.0.0
+- Updated to Geode v5.3.0
+- Now using event exports (thanks Jasmine)
+- Web request using Geode's web::WebRequest class can be overwritten (requires a cookie)
+# 3.0.0
+- Updated to Geode v5, new event system
+- Added `ServerUpdatingEvent`, a read-only Event which fires when the server updates; specifies what server is being switched to and by whom
+- Fixed linker errors in `ServerAPIEvents.hpp`
+- Fix for 2.2081
+- Added developer tag
+# 2.1.1
+- Fixed compiler error when including ServerAPIEvents without including Geode
+- Removed `using namespace geode::prelude;` in ServerAPIEvents header
+- Tweaks to avoid possible future namespace conflicts
+# 2.1.0
+- Added doxygen style documentation comments to the ServerAPIEvents header
+- Internal code changes
+- Small performance improvements
+# 2.0.5
+- New Logo
+# 2.0.4
+- Add API tag
+# 2.0.3
+- JIT-less iOS support
+# 2.0.2
+- Make the mod work on GD from the Amazon App Store
+# 2.0.1
+- iOS support
+# 2.0.0
+- Actually start using semver correctly
+- Remove old API
+- Fix gauntlet URL on patched games.
+# 1.0.5
+- Fix server automatically setting to RobTop's when on a url patched game
+# 1.0.4
+- Fix some servers, most notably fruitspace servers.
+# 1.0.3
+- Add event based API for developers
+- Fix NCS Music
+# 1.0.2
+- Geode 4.0.0-beta.1
+# 1.0.1
+- Geode 4.0.0-alpha.1 and GD 2.2074
+# 1.0.0
+- Initial Release

@@ -1,0 +1,46 @@
+{
+  "geode": "6.0.0",
+  "gd": {
+    "win": "2.2091",
+    "mac": "2.2091",
+    "android": "2.2091"
+  },
+  "id": "damian.goldencoin",
+  "name": "Golden Coin",
+  "version": "v1.1.0",
+  "developer": "damian",
+  "description": "Golden coin editor tab for official GD; owner-only coins, effects and progress indicators on Damian GDPS.",
+  "dependencies": {
+    "alphalaneous.editortab_api": ">=v3.0.0-beta.5",
+    "geode.node-ids": ">=v1.24.0",
+    "km7dev.server_api": {
+      "version": ">=v5.0.0-beta.1",
+      "required": true
+    }
+  },
+  "settings": {
+    "server-url": {
+      "name": "GDPS Base URL",
+      "description": "Leave blank to use Rate Button or the selected Server API server. Do not include /database.",
+      "type": "string",
+      "default": ""
+    },
+    "custom-gdps-mode": {
+      "name": "Patched GDPS client",
+      "description": "Use GDPS features when a patched client has no registered Server API server.",
+      "type": "bool",
+      "default": true
+    }
+  },
+  "tags": [
+    "editor",
+    "gdps",
+    "gameplay"
+  ],
+  "incompatibilities": {
+    "m336.rate-button": {
+      "version": "<=v1.4.16",
+      "breaking": true
+    }
+  }
+}

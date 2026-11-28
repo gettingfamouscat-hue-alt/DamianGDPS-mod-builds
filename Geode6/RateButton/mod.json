@@ -1,0 +1,78 @@
+{
+  "geode": "6.0.0",
+  "gd": {
+    "win": "2.2091",
+    "android": "2.2091",
+    "mac": "2.2091",
+    "ios": "2.2091"
+  },
+  "id": "m336.rate-button",
+  "name": "Rate Button (GDPS only)",
+  "version": "v1.5.0",
+  "developer": "M336",
+  "description": "Rate levels like RobTop!",
+  "links": {
+    "community": "https://discord.gg/adbqkyvbZa",
+    "source": "https://github.com/M336G/RateButton"
+  },
+  "issues": {
+    "info": "Having an issue with the mod?",
+    "url": "https://github.com/M336G/RateButton/issues"
+  },
+  "tags": [
+    "online",
+    "utility",
+    "interface",
+    "gdps"
+  ],
+  "settings": {
+    "extra-settings": {
+      "type": "title",
+      "name": "Extra Settings"
+    },
+    "disable-daily-button": {
+      "name": "Disable Daily Button",
+      "description": "Disable the small green 'Set Daily' button appearing in the interface allowing you to set the level for daily easily",
+      "type": "bool",
+      "default": false
+    },
+    "disable-weekly-button": {
+      "name": "Disable Weekly Button",
+      "description": "Disable the small green 'Set Week' button appearing in the interface allowing you to set the level for weekly easily",
+      "type": "bool",
+      "default": false
+    },
+    "disable-send-only-button": {
+      "name": "Disable Send Only Button",
+      "description": "Hide the extra 'Send Only' button for Elder Mods (Normal Mods always get Send)",
+      "type": "bool",
+      "default": false
+    },
+    "custom-gdps-mode": {
+      "name": "Custom GDPS compatibility",
+      "description": "Enable custom faces and controls on a patched GDPS client when Server API is not available. Supports Mac and Windows.",
+      "type": "bool",
+      "default": true
+    },
+    "server-url": {
+      "name": "GDPS Base URL",
+      "description": "Used for authenticated permissions and owner role controls when Server API is not available. No trailing /database.",
+      "type": "string",
+      "default": "http://192.168.0.143/gdps"
+    }
+  },
+  "resources": {
+    "files": [
+      "resources/very_easy.png",
+      "resources/creator-plus.png",
+      "resources/creator-c.png"
+    ]
+  },
+  "dependencies": {
+    "geode.node-ids": ">=v1.24.0",
+    "km7dev.server_api": {
+      "version": ">=v5.0.0-beta.1",
+      "required": false
+    }
+  }
+}

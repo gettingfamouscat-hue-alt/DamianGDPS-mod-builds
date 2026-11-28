@@ -1,0 +1,39 @@
+name: Build Geode 6 ports
+on:
+  workflow_dispatch:
+  push:
+    branches: [geode6-22091]
+    paths: ['Geode6/**', '.github/workflows/geode6.yml']
+permissions:
+  contents: read
+jobs:
+  build:
+    name: GD 2.2091 - ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: MacOS
+            runner: macos-15-intel
+          - target: Android64
+            runner: ubuntu-latest
+          - target: Android32
+            runner: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: geode-sdk/build-geode-mod@main
+        id: build
+        with:
+          path: Geode6
+          target: ${{ matrix.target }}
+          sdk: '6.0.0'
+          cli: '4.0.2'
+          bindings-ref: 42c3eed43010fa531e9bc5d0aca6f3c3c4f49608
+          use-lto: false
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Geode6-${{ matrix.target }}
+          path: ${{ steps.build.outputs.build-output }}/*.geode
+          if-no-files-found: error

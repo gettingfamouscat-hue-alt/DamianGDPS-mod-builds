@@ -1,0 +1,46 @@
+{
+  "geode": "6.0.0",
+  "gd": {
+    "win": "2.2091",
+    "android": "2.2091",
+    "mac": "2.2091",
+    "ios": "2.2091"
+  },
+  "id": "km7dev.server_api",
+  "name": "Server API",
+  "version": "v5.0.0-beta.1",
+  "developers": [
+    "km7dev",
+    "Alphii"
+  ],
+  "description": "An API for using other GD servers",
+  "api": {
+    "include": [
+      "include/*.hpp"
+    ]
+  },
+  "tags": [
+    "api",
+    "developer"
+  ],
+  "early-load": true,
+  "links": {
+    "source": "https://github.com/AlphiiGD/server-api"
+  },
+  "issues": {
+    "info": "Report issues on GitHub.",
+    "url": "https://github.com/AlphiiGD/server-api"
+  },
+  "settings": {
+    "open-debug": {
+      "type": "custom:popup-setting",
+      "name": "Open Debug Menu"
+    },
+    "audio-fix": {
+      "type": "bool",
+      "name": "Disable NCS Fix",
+      "description": "Disables replacing Newgrounds download URLs with Private Server URLs.",
+      "default": false
+    }
+  }
+}

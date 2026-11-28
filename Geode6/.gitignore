@@ -1,0 +1,4 @@
+build*/
+headers/
+*.geode
+.geode_cache

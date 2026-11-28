@@ -1,0 +1,30 @@
+{
+  "geode": "6.0.0",
+  "gd": {
+    "win": "2.2091",
+    "android": "2.2091",
+    "mac": "2.2091",
+    "ios": "2.2091"
+  },
+  "version": "v1.3.0",
+  "id": "sabe.persistenceapi",
+  "name": "PersistenceAPI",
+  "developer": "Sabe",
+  "description": "API for serialization/deserialization of GD classes",
+  "links": {
+    "source": "https://github.com/0x5abe/PersistenceAPI"
+  },
+  "tags": [
+    "utility",
+    "developer"
+  ],
+  "early-load": true,
+  "api": {
+    "include": [
+      "include/*.hpp",
+      "include/hooks/cocos2d/*.hpp",
+      "include/hooks/*.hpp",
+      "include/util/*.hpp"
+    ]
+  }
+}
