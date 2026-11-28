@@ -63,7 +63,9 @@ void apply(CCNode* root,int id,State& state,bool leftAlign) {
  }
  auto v=e.value;
  if(v.name.empty()) {state.restore();return;}
- auto* node=root->getChildByIDRecursive("creator-name"); if(!node)return;
+ auto* node=root->getChildByIDRecursive("creator-name");
+ if(!node) node=root->getChildByIDRecursive("creator-button");
+ if(!node)return;
  auto* label=findLabel(node);if(!label)return;
  auto* button=typeinfo_cast<CCMenuItem*>(node);
  if(!state.applied || state.label.data()!=label) {

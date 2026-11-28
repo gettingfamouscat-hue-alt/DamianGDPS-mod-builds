@@ -12,7 +12,7 @@ $db->exec('CREATE TEMPORARY TABLE suggest (suggestBy INT, suggestLevelId INT, su
 $db->exec('CREATE TEMPORARY TABLE modactions (type VARCHAR(20), value VARCHAR(100), value2 VARCHAR(100), value3 INT, timestamp INT, account INT) ENGINE=InnoDB');
 $db->exec('INSERT INTO levels (levelID) VALUES (1),(2),(3)');
 $roles = new class {
-    public function access($id) { return ['canSuggest'=>$id===1 || $id===2, 'canRate'=>$id===1, 'canFeature'=>$id===1, 'canSetFire'=>$id===1]; }
+    public function access($id) { return ['canSuggest'=>in_array($id,[1,2,3],true), 'canRate'=>$id===1 || $id===3, 'canSetDemon'=>$id===1, 'canFeature'=>$id===1, 'canSetFire'=>$id===1]; }
 };
 $rating = new StaffRating($db, $roles, new mainLib());
 function expect($condition,$message) { if (!$condition) throw new RuntimeException($message); }
@@ -27,6 +27,10 @@ expect($r['stars']===2147483647 && $r['order']===24990 && $r['tier']===4,'Star r
 expect((int)$db->query('SELECT starDifficulty FROM levels WHERE levelID=1')->fetchColumn()===0,'N/A face changed');
 $rating->handle(1,['action'=>'featured','levelID'=>'1','order'=>'50','tier'=>'2']);
 expect((int)$db->query('SELECT starStars FROM levels WHERE levelID=1')->fetchColumn()===2147483647,'Featured changed stars');
+denied(fn()=>$rating->handle(2,['action'=>'demon','levelID'=>'1','difficulty'=>'easy-demon']),403);
+denied(fn()=>$rating->handle(3,['action'=>'demon','levelID'=>'1','difficulty'=>'easy-demon']),403);
+$r=$rating->handle(1,['action'=>'demon','levelID'=>'1','difficulty'=>'easy-demon']);
+expect($r['subtype']===3 && $r['demon']===1 && $r['stars']===2147483647 && $r['coins']===1 && $r['order']===50 && $r['tier']===2,'Demon subtype changed unrelated awards/fire/order');
 $rating->handle(1,['action'=>'featured','levelID'=>'2','order'=>'500','tier'=>'1']);
 $order=$db->query('SELECT levelID FROM levels WHERE starFeatured=1 ORDER BY '.FeaturedOrder::order($db).' DESC')->fetchAll(PDO::FETCH_COLUMN);
 expect(array_map('intval',$order)===[2,1],'Featured ordering not highest first');
@@ -38,4 +42,4 @@ foreach (['2147483648','-1','1.5','1 OR 1=1'] as $bad) { $invalid=$star; $invali
 $rating->handle(1,['action'=>'featured','levelID'=>'1','order'=>'0','tier'=>'0']);
 $r=$rating->handle(1,['action'=>'read','levelID'=>'1']);
 expect($r['order']===0 && $r['tier']===0 && $r['stars']===2147483647,'Unfeature changed stars');
-echo "PASS: permission boundaries, N/A maximum stars, independent Featured/fire, descending order, complete suggestion details, invalid inputs, unfeature. No real levels changed.\n";
+echo "PASS: permission boundaries including admin-only demon controls, N/A maximum stars, independent Featured/fire, descending order, complete suggestion details, invalid inputs, unfeature. No real levels changed.\n";

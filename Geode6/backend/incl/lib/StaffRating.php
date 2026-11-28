@@ -15,9 +15,10 @@ final class StaffRating {
     public function handle(int $actor, array $input): array {
         $access = $this->roles->access($actor);
         $action = $input['action'] ?? '';
-        if (!is_string($action) || !in_array($action, ['read', 'stars', 'featured', 'send'], true))
+        if (!is_string($action) || !in_array($action, ['read', 'stars', 'featured', 'send', 'demon'], true))
             throw new DomainException('Unknown rating action.', 400);
-        if (empty($access['canSuggest']) || ($action === 'stars' && empty($access['canRate']))
+        if (empty($access['canSuggest']) || (in_array($action, ['stars', 'demon'], true) && empty($access['canRate']))
+            || ($action === 'demon' && empty($access['canSetDemon']))
             || ($action === 'featured' && empty($access['canFeature'])))
             throw new DomainException('This account cannot perform that action.', 403);
         $id = self::number($input['levelID'] ?? '');
@@ -28,7 +29,15 @@ final class StaffRating {
             $q = $this->db->prepare('SELECT * FROM levels WHERE levelID = ? FOR UPDATE');
             $q->execute([$id]); $level = $q->fetch(PDO::FETCH_ASSOC);
             if (!$level) throw new DomainException('Level not found.', 404);
-            if ($action === 'featured') {
+            if ($action === 'demon') {
+                $name = $input['difficulty'] ?? '';
+                if (!is_string($name) || !in_array($name, ['easy-demon', 'medium-demon', 'hard-demon', 'insane-demon', 'extreme-demon'], true))
+                    throw new DomainException('Invalid demon difficulty.', 400);
+                [$diff, $demon, $auto, $subtype] = $this->gs->getDiffFromName($name);
+                $this->db->prepare('UPDATE levels SET starDifficulty = ?, starDemon = ?, starAuto = ?, starDemonDiff = ?, rateDate = ? WHERE levelID = ?')
+                    ->execute([$diff, $demon, $auto, $subtype, time(), $id]);
+                $this->audit($actor, $id, '10', $name, $subtype);
+            } elseif ($action === 'featured') {
                 $rank = self::number($input['order'] ?? '');
                 $tier = self::number($input['tier'] ?? '', 4);
                 if (($rank === 0) !== ($tier === 0))

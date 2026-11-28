@@ -25,6 +25,7 @@ class RoleManager {
         return [
             'accountID' => $accountID,
             'canRate' => (bool)$rate,
+            'canSetDemon' => (bool)($rate && (int)$account['isAdmin'] === 1),
             'canSuggest' => (bool)$send,
             'canFeature' => (bool)($rate && $this->gs->checkPermission($accountID, 'commandFeature')),
             'canSetFire' => (bool)($rate && $this->gs->checkPermission($accountID, 'commandEpic')),

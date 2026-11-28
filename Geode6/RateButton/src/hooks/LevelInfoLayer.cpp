@@ -2,6 +2,7 @@
 #include <Geode/modify/LevelInfoLayer.hpp>
 #include "../DevRateStarsPopup.hpp"
 #include "../FeaturedOrderPopup.hpp"
+#include "../AdminDemonPopup.hpp"
 #include "../CreatorDisplayPopup.hpp"
 #include "../managers/SessionManager.hpp"
 #include "../utils/CustomFace.hpp"
@@ -46,13 +47,15 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
         CCSprite *m_customFaceOverlay = nullptr;
         CreatorDisplay::State display;
         bool starVisible = false, demonVisible = false;
+        bool staffPositionSaved = false;
+        CCPoint staffPosition{};
     };
 
     void hideVanillaRateButtons() {
         if (m_starRateBtn)
             m_starRateBtn->setVisible(!SessionManager::isElderMod() && m_fields->starVisible);
         if (m_demonRateBtn)
-            m_demonRateBtn->setVisible(!SessionManager::isElderMod() && m_fields->demonVisible);
+            m_demonRateBtn->setVisible(false);
 
         // Stock mod suggest/rate uses the same yellow GJ_starBtnMod sprite as us.
         // Hide that duplicate whenever our Rate Button is in play (elders especially).
@@ -71,12 +74,11 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
         hideModRate(this->getChildByID("right-side-menu"));
     }
 
-    CCMenu *rateMenu() {
-        if (auto *left = static_cast<CCMenu *>(this->getChildByID("left-side-menu")))
-            return left;
-        if (auto *right = static_cast<CCMenu *>(this->getChildByID("right-side-menu")))
-            return right;
-        return nullptr;
+    CCMenu* rateMenu() {
+        if (auto* menu = typeinfo_cast<CCMenu*>(getChildByID("staff-controls-menu"_spr))) return menu;
+        auto* menu = CCMenu::create(); menu->setPosition({0.f, 0.f});
+        menu->setID("staff-controls-menu"_spr); addChild(menu, 10);
+        return menu;
     }
 
     void clearCustomFaceOverlay() {
@@ -116,21 +118,37 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
             return;
         }
 
+        auto win = CCDirector::sharedDirector()->getWinSize();
+        if (!m_fields->staffPositionSaved) {
+            m_fields->staffPosition = {30.f, win.height / 2.f + 30.f};
+            for (auto const* id : {"left-side-menu", "right-side-menu"})
+                if (auto* nativeMenu = getChildByID(id))
+                    if (auto* nativeButton = nativeMenu->getChildByID("mod-rate-button"))
+                        m_fields->staffPosition = menu->convertToNodeSpace(nativeButton->convertToWorldSpace(nativeButton->getContentSize()/2.f));
+            m_fields->staffPositionSaved = true;
+        }
+        auto* adminDemon = menu->getChildByID("admin-set-demon-button"_spr);
+        if (SessionManager::canSetDemon() && !adminDemon) {
+            auto* button = CCMenuItemSpriteExtra::create(
+                CCSprite::createWithSpriteFrameName("GJ_demonIcon_001.png"), this,
+                menu_selector(MyLevelInfoLayer::onSetDemon));
+            button->setID("admin-set-demon-button"_spr); button->setPosition({win.width - 82.f, 30.f}); menu->addChild(button);
+        } else if (!SessionManager::canSetDemon() && adminDemon) adminDemon->removeFromParent();
         auto* adminStars = menu->getChildByID("admin-set-stars-button"_spr);
         if (SessionManager::isElderMod() && !adminStars) {
             auto* button = CCMenuItemSpriteExtra::create(
                 CCSprite::createWithSpriteFrameName("GJ_starBtn_001.png"), this,
                 menu_selector(MyLevelInfoLayer::onSetStars));
-            button->setID("admin-set-stars-button"_spr); menu->addChild(button); menu->updateLayout();
+            button->setID("admin-set-stars-button"_spr); button->setPosition({win.width - 30.f, 30.f}); menu->addChild(button);
         } else if (!SessionManager::isElderMod() && adminStars) {
-            adminStars->removeFromParent(); menu->updateLayout();
+            adminStars->removeFromParent(); 
         }
         auto *existing = menu->getChildByID("dev-rate-button"_spr);
 
         if (!SessionManager::canUseRateButton()) {
             if (existing) {
                 existing->removeFromParent();
-                menu->updateLayout();
+                
             }
             return;
         }
@@ -148,8 +166,9 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
         );
         devRateButton->setID("dev-rate-button"_spr);
 
+        devRateButton->setPosition(m_fields->staffPosition);
         menu->addChild(devRateButton);
-        menu->updateLayout();
+        
         log::info("Rate Button: added yellow mod star (access={})", SessionManager::ModAccessLevel);
     }
 
@@ -186,12 +205,12 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
         CreatorDisplay::apply(this,m_level->m_levelID,m_fields->display,false);
         auto* menu=this->rateMenu(); if(!menu)return;
         auto* existing=menu->getChildByID("creator-display-button"_spr);
-        if(!SessionManager::canManageRoles()) { if(existing){existing->removeFromParent();menu->updateLayout();}return; }
+        if(!SessionManager::canManageRoles()) { if(existing){existing->removeFromParent();}return; }
         if(existing)return;
         auto* sprite=ButtonSprite::create("Creator");
         sprite->setScale(.45f);
         auto* b=CCMenuItemSpriteExtra::create(sprite,this,menu_selector(MyLevelInfoLayer::onCreatorDisplay));
-        b->setID("creator-display-button"_spr);menu->addChild(b);menu->updateLayout();
+        b->setID("creator-display-button"_spr); b->setPosition(m_fields->staffPosition + CCPoint{0.f, 38.f}); menu->addChild(b);
     }
     void pollPermissions(float) {
         SessionManager::refresh();
@@ -253,6 +272,10 @@ class $modify(MyLevelInfoLayer, LevelInfoLayer) {
         rewriteStarsRequestedText(this, name);
     }
 
+    void onSetDemon(CCObject*) {
+        if (m_level && SessionManager::canSetDemon())
+            if (auto* popup = AdminDemonPopup::create(m_level->m_levelID)) popup->show();
+    }
     void onSetStars(CCObject*) {
         if (m_level && SessionManager::isElderMod())
             if (auto* popup = DevRateStarsPopup::create(m_level->m_levelID)) popup->show();

@@ -16,6 +16,7 @@ public:
     static void setModAccessLevel(int level);
     static void refresh(bool force = false);
     static bool canManageRoles();
+    static bool canSetDemon();
     static int accountID();
     static void assignRole(int target, std::string role, std::function<void(bool, std::string)> done);
 

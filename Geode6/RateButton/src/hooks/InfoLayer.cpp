@@ -29,7 +29,7 @@ class $modify(CreatorInfoLayer, InfoLayer) {
     bool init(GJGameLevel* level, GJUserScore* score, GJLevelList* list, GJEditorSoundConfig* sound) {
         if (!InfoLayer::init(level, score, list, sound)) return false;
         if (level && Utils::isOnGdps()) {
-            if (!getChildByIDRecursive("creator-name")) {
+            if (!getChildByIDRecursive("creator-name") && !getChildByIDRecursive("creator-button")) {
                 if (auto* label = findCreatorHeader(this)) {
                     auto* parent = label->getParent();
                     if (typeinfo_cast<CCMenuItem*>(parent)) parent->setID("creator-name");

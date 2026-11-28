@@ -10,7 +10,7 @@ using namespace geode::prelude;
 namespace {
     int currentAccount = 0;
     std::string currentServer, currentCredential;
-    bool manageRoles = false, pending = false;
+    bool manageRoles = false, pending = false, setDemon = false;
     unsigned generation = 0;
     using Clock = std::chrono::steady_clock;
     Clock::time_point verified{}, attempted{};
@@ -26,12 +26,12 @@ namespace {
             currentCredential = credential;
             currentServer = server;
             SessionManager::ModAccessLevel = 0;
-            manageRoles = pending = false;
+            manageRoles = pending = setDemon = false;
             verified = attempted = {};
         }
         if (verified == Clock::time_point{} || Clock::now() - verified > std::chrono::seconds(10)) {
             SessionManager::ModAccessLevel = 0;
-            manageRoles = false;
+            manageRoles = setDemon = false;
         }
     }
 }
@@ -54,6 +54,7 @@ void SessionManager::ensureLoaded() {
 int SessionManager::accountID() { ensureLoaded(); return currentAccount; }
 bool SessionManager::canUseRateButton() { ensureLoaded(); return ModAccessLevel >= 1; }
 bool SessionManager::isElderMod() { ensureLoaded(); return ModAccessLevel >= 2; }
+bool SessionManager::canSetDemon() { ensureLoaded(); return setDemon; }
 bool SessionManager::canManageRoles() { ensureLoaded(); return manageRoles; }
 
 void SessionManager::setModAccessLevel(int) {
@@ -66,7 +67,7 @@ void SessionManager::refresh(bool force) {
     ensureLoaded();
     if (currentAccount <= 0 || currentCredential.empty() || currentServer.empty() || pending) return;
     if (!force && attempted != Clock::time_point{} && Clock::now() - attempted < std::chrono::seconds(5)) return;
-    if (force) { ModAccessLevel = 0; manageRoles = false; verified = {}; }
+    if (force) { ModAccessLevel = 0; manageRoles = setDemon = false; verified = {}; }
     attempted = Clock::now();
     pending = true;
     auto const epoch = generation;
@@ -84,7 +85,7 @@ void SessionManager::refresh(bool force) {
             if (epoch != generation) return;
             pending = false;
             ModAccessLevel = 0;
-            manageRoles = false;
+            manageRoles = setDemon = false;
             if (!response.ok()) return;
             auto parsed = response.json();
             if (!parsed) return;
@@ -94,6 +95,7 @@ void SessionManager::refresh(bool force) {
             bool const rate = body["canRate"].asBool().unwrapOr(false);
             bool const send = body["canSuggest"].asBool().unwrapOr(false);
             ModAccessLevel = rate ? 2 : (send ? 1 : 0);
+            setDemon = body["canSetDemon"].asBool().unwrapOr(false);
             manageRoles = body["canManageRoles"].asBool().unwrapOr(false);
             verified = Clock::now();
         });

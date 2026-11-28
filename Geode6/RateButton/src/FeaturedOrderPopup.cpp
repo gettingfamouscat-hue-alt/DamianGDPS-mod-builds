@@ -9,10 +9,7 @@ bool FeaturedOrderPopup::init(int level) {
     if (!SessionManager::isElderMod() || !Popup::init(400.f, 235.f)) return false;
     m_level = level; setTitle("Set Featured", "bigFont.fnt", .85f);
     setID("featured-order-popup"_spr);
-    auto text = [this](char const* value, CCPoint point, float scale) {
-        auto* l = CCLabelBMFont::create(value, "bigFont.fnt"); l->setScale(scale); l->setPosition(point); m_mainLayer->addChild(l); return l;
-    };
-    text("Higher order appears first in Featured", {200.f, 176.f}, .32f);
+    m_closeBtn->setVisible(false);
     m_number = CCLabelBMFont::create("Loading...", "bigFont.fnt");
     auto* number = CCMenuItemSpriteExtra::create(m_number, this, menu_selector(FeaturedOrderPopup::onNumber));
     number->setPosition({200.f, 123.f}); m_buttonMenu->addChild(number);
@@ -23,12 +20,10 @@ bool FeaturedOrderPopup::init(int level) {
         if (n == 0 || n == 3) sprite->setColor({155, 255, 80});
         auto* b = CCMenuItemSpriteExtra::create(sprite, this, menu_selector(FeaturedOrderPopup::onStep));
         b->setTag(steps[n]); b->setPosition({xs[n], 123.f}); m_buttonMenu->addChild(b);
-        text(n == 0 ? "-100" : n == 1 ? "-1" : n == 2 ? "+1" : "+100", {xs[n], 93.f}, .24f);
     }
     m_fire = CCSprite::createWithSpriteFrameName("GJ_featuredCoin_001.png"); m_fire->setScale(.7f);
     auto* fire = CCMenuItemSpriteExtra::create(m_fire, this, menu_selector(FeaturedOrderPopup::onFire));
-    fire->setPosition({142.f, 62.f}); m_buttonMenu->addChild(fire);
-    m_fireText = text("Not featured", {240.f, 62.f}, .36f);
+    fire->setPosition({0.f, 235.f}); m_buttonMenu->addChild(fire);
     auto* cancel = CCMenuItemSpriteExtra::create(ButtonSprite::create("Cancel"), this, menu_selector(FeaturedOrderPopup::onCancel));
     m_submit = CCMenuItemSpriteExtra::create(ButtonSprite::create("Submit"), this, menu_selector(FeaturedOrderPopup::onSubmit));
     cancel->setScale(.7f); m_submit->setScale(.7f);
@@ -55,9 +50,8 @@ bool FeaturedOrderPopup::init(int level) {
 void FeaturedOrderPopup::update() {
     if (m_ready) { m_number->setString(std::to_string(m_order).c_str()); m_number->limitLabelWidth(175.f, 1.f, .35f); }
     char const* frames[] = {"GJ_featuredCoin_001.png", "GJ_featuredCoin_001.png", "GJ_epicCoin_001.png", "GJ_epicCoin2_001.png", "GJ_epicCoin3_001.png"};
-    char const* names[] = {"Not featured", "Featured", "Epic", "Legendary", "Mythic"};
     m_fire->setDisplayFrame(CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(frames[m_tier]));
-    m_fire->setOpacity(m_tier ? 255 : 100); m_fireText->setString(names[m_tier]);
+    m_fire->setOpacity(m_tier ? 255 : 100);
     m_submit->setEnabled(m_ready && !m_pending); m_submit->setOpacity(m_ready && !m_pending ? 255 : 127);
 }
 void FeaturedOrderPopup::onStep(CCObject* sender) {
